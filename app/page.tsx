@@ -1,87 +1,205 @@
-"use client";
+import Link from "next/link";
 
-import { useMemo, useState } from "react";
-
-const sections = ["Übersicht", "Planung", "Kalender", "Budget", "Anbieter", "Gäste"] as const;
-type Section = (typeof sections)[number];
-
-const initialTasks = [
-  { title: "Fotograf auswählen", meta: "Empfohlen bis 20. September", done: false },
-  { title: "Save-the-Date versenden", meta: "86 Empfänger vorbereitet", done: false },
-  { title: "Location bestätigen", meta: "Gut Sonnenhof · Köln", done: true },
-  { title: "Menüverkostung terminieren", meta: "Bis 12. Oktober", done: false },
+const principles = [
+  {
+    number: "01",
+    title: "Ein Tag. Ein klarer Plan.",
+    copy: "Paare konfigurieren ihre Hochzeit Schritt für Schritt – ohne unübersichtliche Listen, endlose Anfragen oder Planungschaos.",
+  },
+  {
+    number: "02",
+    title: "Alles passt zusammen.",
+    copy: "Location, Dienstleister, Extras und Budget laufen in einem System zusammen und werden direkt miteinander abgestimmt.",
+  },
+  {
+    number: "03",
+    title: "Aus Planung wird Buchung.",
+    copy: "Die komplette Auswahl landet transparent im Warenkorb. So wird aus einer Idee eine Hochzeit, die wirklich buchbar ist.",
+  },
 ];
 
-const vendors = [
-  { icon: "📷", name: "Luma Fotografie", meta: "Fotografie · Köln", match: 96, price: "ab 2.400 €" },
-  { icon: "♫", name: "DJ Marcelle", meta: "DJ · Düsseldorf", match: 93, price: "ab 1.350 €" },
-  { icon: "✿", name: "Maison Fleur", meta: "Floristik · Bonn", match: 91, price: "ab 1.800 €" },
+const journey = [
+  ["01", "Rahmen festlegen", "Datum, Region, Gästezahl, Stil und Budget bilden die Grundlage."],
+  ["02", "Hochzeit konfigurieren", "Ouivio zeigt passende Locations, Anbieter und Extras als zusammenhängendes Konzept."],
+  ["03", "Gemeinsam entscheiden", "Das Paar vergleicht, passt an und behält Kosten sowie Aufgaben jederzeit im Blick."],
+  ["04", "Gebündelt buchen", "Alle ausgewählten Leistungen werden zentral bestätigt und bezahlt."],
 ];
-
-const guests = [
-  { name: "Anna Keller", group: "Familie", status: "Zugesagt" },
-  { name: "Mehmet Yılmaz", group: "Freunde", status: "Offen" },
-  { name: "Laura & Tim", group: "Freunde", status: "Zugesagt" },
-  { name: "Julia Sommer", group: "Arbeit", status: "Abgesagt" },
-];
-
-function Ring({ value }: { value: number }) {
-  return <div className="ring" style={{ "--value": `${value * 3.6}deg` } as React.CSSProperties}><span>{value}%</span></div>;
-}
 
 export default function Home() {
-  const [active, setActive] = useState<Section>("Übersicht");
-  const [tasks, setTasks] = useState(initialTasks);
-  const [query, setQuery] = useState("");
-  const done = tasks.filter((task) => task.done).length;
-  const progress = Math.round((done / tasks.length) * 100);
-  const filteredVendors = useMemo(() => vendors.filter((vendor) => `${vendor.name} ${vendor.meta}`.toLowerCase().includes(query.toLowerCase())), [query]);
-
-  const toggleTask = (title: string) => setTasks((current) => current.map((task) => task.title === title ? { ...task, done: !task.done } : task));
-
   return (
-    <main className="app-shell">
-      <aside className="sidebar">
-        <button className="logo" onClick={() => setActive("Übersicht")}>Ouivio<span>.</span></button>
-        <nav aria-label="Hauptnavigation">
-          {sections.map((item) => <button className={active === item ? "active" : ""} key={item} onClick={() => setActive(item)}><i aria-hidden>{item === "Übersicht" ? "⌂" : item === "Planung" ? "✓" : item === "Kalender" ? "□" : item === "Budget" ? "€" : item === "Anbieter" ? "◇" : "♙"}</i><span>{item}</span></button>)}
-        </nav>
-        <div className="profile"><span>S&D</span><div><strong>Sarah & Daniel</strong><small>14. August 2027</small></div></div>
-      </aside>
+    <main className="landing">
+      <nav className="landing-nav">
+        <Link className="landing-logo" href="/" aria-label="Ouivio Startseite">
+          Ouivio<span>.</span>
+        </Link>
+        <div className="landing-links">
+          <a href="#idee">Die Idee</a>
+          <a href="#so-funktionierts">So funktioniert&apos;s</a>
+          <a href="#ueber-uns">Wer wir sind</a>
+        </div>
+        <Link className="nav-dashboard" href="/dashboard">
+          Dashboard öffnen <span>→</span>
+        </Link>
+      </nav>
 
-      <section className="content">
-        <header className="topbar">
-          <div><small>Wedding workspace</small><strong>{active}</strong></div>
-          <label className="search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Suchen …" /></label>
-          <button className="avatar" aria-label="Benachrichtigungen">S&D</button>
-        </header>
+      <header className="landing-hero">
+        <div className="hero-copy">
+          <p className="landing-kicker">Die neue Art, Hochzeiten zu planen</p>
+          <h1>
+            Eure Hochzeit.
+            <br />
+            <em>Einfach gemacht.</em>
+          </h1>
+          <p className="landing-lead">
+            Ouivio verbindet Inspiration, Planung und Buchung in einem einzigen
+            Erlebnis. Ihr stellt eure Hochzeit zusammen – klar, schnell und ohne
+            Planungsstress.
+          </p>
+          <div className="landing-actions">
+            <Link className="primary-action" href="/dashboard">
+              Produkt erleben <span>→</span>
+            </Link>
+            <a className="secondary-action" href="#idee">
+              Unsere Vision
+            </a>
+          </div>
+          <div className="landing-trust">
+            <span>Eine zentrale Planung</span>
+            <span>Volle Kostenkontrolle</span>
+            <span>Passende Anbieter</span>
+          </div>
+        </div>
 
-        {active === "Übersicht" && <>
-          <section className="hero">
-            <div><p className="eyebrow">Guten Morgen, ihr zwei</p><h1>Eure Hochzeit.<br/>Ein klarer Plan.</h1><p>Alles Wichtige an einem Ort – von der ersten Idee bis zum letzten Tanz.</p><button onClick={() => setActive("Planung")}>Planung fortsetzen <span>→</span></button></div>
-            <div className="hero-side"><p>Noch</p><strong>379</strong><span>Tage bis zu eurem Ja</span><div><Ring value={progress}/><p><b>{done} von {tasks.length}</b><small>Meilensteine erledigt</small></p></div></div>
-          </section>
-          <section className="stats-grid">
-            <button className="card stat" onClick={() => setActive("Budget")}><span>Budget</span><strong>13.200 €</strong><small>von 25.000 € eingeplant</small><div className="progress"><i style={{width:"53%"}}/></div></button>
-            <button className="card stat" onClick={() => setActive("Gäste")}><span>Gäste</span><strong>86</strong><small>62 Zusagen · 24 offen</small><div className="progress"><i style={{width:"72%"}}/></div></button>
-            <button className="card stat" onClick={() => setActive("Anbieter")}><span>Anbieter</span><strong>3 Matches</strong><small>Für euch vorausgewählt</small><div className="faces"><i>📷</i><i>♫</i><i>✿</i></div></button>
-          </section>
-          <section className="detail-grid">
-            <article className="card"><div className="card-head"><div><small>Als Nächstes</small><h2>Eure Aufgaben</h2></div><button onClick={() => setActive("Planung")}>Alle ansehen →</button></div>{tasks.slice(0,3).map((task) => <button className="row task" onClick={() => toggleTask(task.title)} key={task.title}><span className={task.done ? "check done" : "check"}>{task.done ? "✓" : ""}</span><span><strong>{task.title}</strong><small>{task.meta}</small></span></button>)}</article>
-            <article className="card"><div className="card-head"><div><small>Ouivio Auswahl</small><h2>Beste Matches</h2></div><button onClick={() => setActive("Anbieter")}>Entdecken →</button></div>{vendors.slice(0,2).map((vendor) => <div className="row vendor" key={vendor.name}><span className="vendor-icon">{vendor.icon}</span><span><strong>{vendor.name}</strong><small>{vendor.meta}</small></span><b>{vendor.match}%</b></div>)}</article>
-          </section>
-        </>}
+        <div className="product-stage" aria-label="Vorschau des Ouivio Dashboards">
+          <div className="stage-glow" />
+          <div className="mini-app">
+            <div className="mini-sidebar">
+              <b>Ouivio.</b>
+              <i className="selected">⌂</i>
+              <i>✓</i>
+              <i>□</i>
+              <i>€</i>
+              <i>◇</i>
+            </div>
+            <div className="mini-content">
+              <div className="mini-top">
+                <span>Guten Morgen, ihr zwei</span>
+                <i>S&amp;D</i>
+              </div>
+              <div className="mini-hero">
+                <small>EURE HOCHZEIT</small>
+                <strong>Ein klarer Plan.</strong>
+                <p>Alles Wichtige an einem Ort.</p>
+              </div>
+              <div className="mini-stats">
+                <div><small>Budget</small><b>25.000 €</b></div>
+                <div><small>Gäste</small><b>86</b></div>
+                <div><small>Fortschritt</small><b>68%</b></div>
+              </div>
+            </div>
+          </div>
+          <div className="stage-note">
+            <span>Heute erledigt</span>
+            <strong>Location bestätigt</strong>
+            <small>Der nächste Schritt ist schon vorbereitet.</small>
+          </div>
+        </div>
+      </header>
 
-        {active === "Planung" && <Page title="Planung" intro="Euer roter Faden bis zum Hochzeitstag. Erledigt Aufgaben gemeinsam und behaltet jeden Meilenstein im Blick."><div className="card task-list">{tasks.map((task) => <button className="row task" onClick={() => toggleTask(task.title)} key={task.title}><span className={task.done ? "check done" : "check"}>{task.done ? "✓" : ""}</span><span><strong>{task.title}</strong><small>{task.meta}</small></span><em>{task.done ? "Erledigt" : "Offen"}</em></button>)}</div></Page>}
-        {active === "Kalender" && <Page title="Kalender" intro="Alle wichtigen Termine, Deadlines und Gespräche in einer gemeinsamen Zeitleiste."><div className="timeline card">{[["18 SEP","Gespräch mit Luma Fotografie","11:00 · Video-Call"],["25 SEP","Location-Begehung","15:30 · Gut Sonnenhof"],["12 OKT","Menüverkostung","18:00 · Restaurant Lumière"]].map((item) => <div className="event" key={item[1]}><b>{item[0]}</b><span><strong>{item[1]}</strong><small>{item[2]}</small></span></div>)}</div></Page>}
-        {active === "Budget" && <Page title="Budget" intro="Klarheit über jede Ausgabe – geplant, reserviert und bezahlt."><div className="budget-grid"><article className="card budget-total"><small>Gesamtbudget</small><strong>25.000 €</strong><div className="progress"><i style={{width:"53%"}}/></div><p><span>13.200 € geplant</span><span>11.800 € verfügbar</span></p></article><article className="card">{[["Location","7.500 €","30%"],["Fotografie","2.400 €","10%"],["Musik","1.350 €","5%"],["Floristik","1.800 €","7%"]].map((item) => <div className="budget-row" key={item[0]}><span>{item[0]}</span><strong>{item[1]}</strong><small>{item[2]}</small></div>)}</article></div></Page>}
-        {active === "Anbieter" && <Page title="Anbieter" intro="Handverlesene Profis, passend zu eurem Stil, Termin und Budget."><div className="vendor-grid">{filteredVendors.map((vendor) => <article className="card vendor-card" key={vendor.name}><div className="vendor-visual">{vendor.icon}</div><span className="match">{vendor.match}% Match</span><h2>{vendor.name}</h2><p>{vendor.meta}</p><strong>{vendor.price}</strong><button>Details ansehen →</button></article>)}</div></Page>}
-        {active === "Gäste" && <Page title="Gäste" intro="Zusagen, Gruppen und Wünsche eurer Gäste übersichtlich verwalten."><div className="card guest-table"><div className="table-head"><span>Name</span><span>Gruppe</span><span>Status</span></div>{guests.map((guest) => <div className="guest-row" key={guest.name}><strong>{guest.name}</strong><span>{guest.group}</span><em className={guest.status.toLowerCase()}>{guest.status}</em></div>)}</div></Page>}
+      <section className="landing-section idea-section" id="idee">
+        <div className="section-intro">
+          <p className="landing-kicker">Was wir vorhaben</p>
+          <h2>Hochzeitsplanung neu gedacht.</h2>
+          <p>
+            Heute müssen Paare Informationen, Angebote und Entscheidungen an
+            vielen Orten zusammensuchen. Ouivio macht daraus einen geführten,
+            zusammenhängenden Weg.
+          </p>
+        </div>
+        <div className="principle-grid">
+          {principles.map((principle) => (
+            <article className="principle-card" key={principle.number}>
+              <span>{principle.number}</span>
+              <h3>{principle.title}</h3>
+              <p>{principle.copy}</p>
+            </article>
+          ))}
+        </div>
       </section>
+
+      <section className="landing-section journey-section" id="so-funktionierts">
+        <div className="journey-heading">
+          <p className="landing-kicker light">So funktioniert&apos;s</p>
+          <h2>Von der ersten Idee bis zum Ja.</h2>
+          <p>
+            Ein geführter Prozess, der Entscheidungen vereinfacht und trotzdem
+            Raum für eine persönliche Hochzeit lässt.
+          </p>
+        </div>
+        <div className="journey-list">
+          {journey.map(([number, title, copy]) => (
+            <article key={number}>
+              <span>{number}</span>
+              <div>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section product-section">
+        <div>
+          <p className="landing-kicker">Das Produkt</p>
+          <h2>Eine Oberfläche für die ganze Hochzeit.</h2>
+          <p>
+            Im Ouivio-Dashboard kommen Planung, Kalender, Budget, Gäste und
+            Anbieter zusammen. Der aktuelle Prototyp zeigt bereits, wie sich
+            dieser zentrale Workspace anfühlt.
+          </p>
+        </div>
+        <Link className="product-cta" href="/dashboard">
+          <span>Interaktiven Prototyp öffnen</span>
+          <b>Dashboard ansehen →</b>
+        </Link>
+      </section>
+
+      <section className="landing-section about-section" id="ueber-uns">
+        <div className="about-label">
+          <span>Wer wir sind</span>
+          <b>Ouivio</b>
+        </div>
+        <div className="about-copy">
+          <h2>Wir bauen die Plattform, die wir selbst bei Hochzeiten vermissen.</h2>
+          <p>
+            Ouivio entsteht aus einer einfachen Überzeugung: Eine Hochzeit darf
+            komplex sein – ihre Planung sollte es nicht sein. Wir bringen Paare
+            und ausgewählte Hochzeitsprofis in einem transparenten digitalen
+            Prozess zusammen.
+          </p>
+          <p>
+            Wir starten fokussiert, lernen gemeinsam mit Paaren und Anbietern
+            und entwickeln daraus Schritt für Schritt den einfachsten Weg zur
+            eigenen Hochzeit.
+          </p>
+        </div>
+      </section>
+
+      <section className="landing-cta">
+        <p className="landing-kicker light">Ouivio beginnt jetzt</p>
+        <h2>Planifiez. Réservez. Célébrez.</h2>
+        <p>Entdeckt den ersten funktionierenden Produktbereich.</p>
+        <Link className="white-action" href="/dashboard">
+          Dashboard öffnen <span>→</span>
+        </Link>
+      </section>
+
+      <footer className="landing-footer">
+        <Link className="landing-logo" href="/">Ouivio<span>.</span></Link>
+        <p>Hochzeiten planen, zusammenstellen und buchen.</p>
+        <span>© 2026 Ouivio</span>
+      </footer>
     </main>
   );
-}
-
-function Page({ title, intro, children }: { title: string; intro: string; children: React.ReactNode }) {
-  return <section className="page"><p className="eyebrow red">Ouivio Workspace</p><h1>{title}</h1><p className="intro">{intro}</p>{children}</section>;
 }
