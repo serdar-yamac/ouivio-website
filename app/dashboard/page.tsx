@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const sections = ["Übersicht", "Planung", "Kalender", "Budget", "Anbieter", "Gäste"] as const;
 type Section = (typeof sections)[number];
@@ -33,12 +33,29 @@ function Ring({ value }: { value: number }) {
 export default function Home() {
   const [active, setActive] = useState<Section>("Übersicht");
   const [tasks, setTasks] = useState(initialTasks);
+  const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState("");
   const done = tasks.filter((task) => task.done).length;
   const progress = Math.round((done / tasks.length) * 100);
   const filteredVendors = useMemo(() => vendors.filter((vendor) => `${vendor.name} ${vendor.meta}`.toLowerCase().includes(query.toLowerCase())), [query]);
 
   const toggleTask = (title: string) => setTasks((current) => current.map((task) => task.title === title ? { ...task, done: !task.done } : task));
+
+  useEffect(() => {
+    const savedTasks = window.localStorage.getItem("ouivio.tasks");
+    if (savedTasks) {
+      try {
+        setTasks(JSON.parse(savedTasks));
+      } catch {
+        window.localStorage.removeItem("ouivio.tasks");
+      }
+    }
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (loaded) window.localStorage.setItem("ouivio.tasks", JSON.stringify(tasks));
+  }, [loaded, tasks]);
 
   return (
     <main className="app-shell">
