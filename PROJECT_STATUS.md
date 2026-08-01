@@ -44,6 +44,10 @@ Technische Grundlage:
 - Anbieteransicht zeigt Matches; die globale Suche filtert die Anbieter lokal.
 - Gästeliste zeigt Namen, Gruppen und RSVP-Status.
 - Rücklink vom Dashboard zur Startseite ist vorhanden.
+- Supabase-E-Mail-/Passwort-Registrierung und Anmeldung stehen unter `/login` bereit.
+- Nicht angemeldete Dashboard-Aufrufe werden zur Anmeldung weitergeleitet; Sitzungen werden automatisch gespeichert und erneuert.
+- Nach der ersten bestätigten Anmeldung wird automatisch ein persönlicher Hochzeitsbereich mit Eigentümer-Mitgliedschaft angelegt.
+- Abmeldung ist direkt im Dashboard möglich.
 
 ### Deployment
 
@@ -65,8 +69,8 @@ Technische Grundlage:
 ## Bekannte Einschränkungen
 
 - Das Dashboard verwendet überwiegend fest codierte Demo-Daten.
-- Das Supabase-Datenbankschema ist im Projekt `Ouivio` aktiv, die öffentlichen Anwendungsvariablen sind lokal und für den Feature-Branch in Vercel Preview verbunden, und eine typisierte REST-Datenzugriffsschicht ist vorbereitet; Authentifizierung ist noch nicht umgesetzt.
-- Es gibt keine Benutzerkonten, Anmeldung oder Autorisierung.
+- Das Supabase-Datenbankschema ist im Projekt `Ouivio` aktiv, die öffentlichen Anwendungsvariablen sind lokal und für den Feature-Branch in Vercel Preview verbunden, und eine typisierte REST-Datenzugriffsschicht ist vorbereitet.
+- Authentifizierung und clientseitiger Routenschutz sind umgesetzt; ein vollständiger Registrierungstest mit echter E-Mail-Bestätigung erfordert noch ein Benutzerkonto.
 - Aufgaben werden bis zur Aktivierung von Supabase Auth weiterhin nur lokal im jeweiligen Browser gespeichert und nicht zwischen Geräten synchronisiert.
 - Kalendertermine sind nicht editierbar und nicht mit Google Calendar oder Outlook verbunden.
 - Budgetposten können nicht angelegt, geändert oder bezahlt markiert werden.
@@ -75,13 +79,14 @@ Technische Grundlage:
 - Suche wirkt derzeit nur auf die lokale Anbieterliste.
 - Benachrichtigungen, Nachrichten und Mehrbenutzer-Zusammenarbeit fehlen.
 - Es gibt noch keine automatisierten Tests.
+- `npm audit --omit=dev` meldet drei hohe transitive Hinweise über die bestehende Next.js-15-Abhängigkeit (`postcss` und `sharp`); eine separat geprüfte Next.js-Major-Aktualisierung ist offen.
 
 ## Offene Aufgaben
 
 Priorität 1 – Produktgrundlage:
 
-1. Authentifizierung, geschützte Dashboard-Routen und Mandantentrennung umsetzen.
-2. Dashboard-Aufgaben nach der Anmeldung über die vorbereitete REST-Schicht synchronisieren.
+1. Dashboard-Aufgaben nach der Anmeldung über die vorbereitete REST-Schicht synchronisieren.
+2. Registrierung und E-Mail-Bestätigung mit einem echten Benutzerkonto Ende-zu-Ende prüfen.
 3. Demo-Daten schrittweise durch echte, benutzerspezifische Daten ersetzen.
 
 Priorität 2 – Kernfunktionen:
@@ -113,6 +118,7 @@ Priorität 3 – Qualität und Betrieb:
 - Supabase/Postgres ist als persistente Datenbasis vorbereitet. Row-Level Security bleibt verpflichtend; anonyme öffentliche Schreibrechte werden nicht geöffnet.
 - Das Grundschema umfasst Hochzeiten, Mitglieder, Aufgaben, Termine, Budgetposten, Gäste, Anbieter und Favoriten.
 - Interne RLS-Hilfsfunktionen liegen im nicht exponierten `private`-Schema; Funktions- und Tabellenrechte sind explizit auf authentifizierte Nutzer begrenzt.
+- Supabase Auth verwaltet Browser-Sitzungen; Autorisierung erfolgt ausschließlich über Datenbank-RLS und nicht über bearbeitbare Nutzer-Metadaten.
 
 ## Letzte Prüfung
 
@@ -128,3 +134,7 @@ Priorität 3 – Qualität und Betrieb:
 - Supabase Security Advisor geprüft: 0 Fehler, 0 Warnungen und 0 Hinweise.
 - Lokale Verbindung geprüft: Supabase Auth-Einstellungen antworten mit HTTP 200; anonyme Anbieterabfrage liefert wegen RLS keine Datensätze.
 - Vercel-Konfiguration geprüft: `NEXT_PUBLIC_SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_ANON_KEY` sind ausschließlich für Preview und den Branch `feat/ouivio-core-foundation` hinterlegt; Production blieb unverändert.
+- Supabase Auth Site URL auf den stabilen Feature-Branch-Preview gesetzt; E-Mail-/Passwort-Authentifizierung ist für das Projekt aktiv.
+- Auth-Ablauf lokal geprüft: `/dashboard` leitet ohne Sitzung nach `/login`, ein ungültiger Login wird abgewiesen und verständlich angezeigt.
+- TypeScript-Prüfung und optimierter Production-Build nach Einführung von Supabase Auth erfolgreich.
+- Abhängigkeitsprüfung ausgeführt: keine kritischen Hinweise; drei hohe transitive Hinweise der bestehenden Next.js-15-Lieferkette sind dokumentiert und nicht automatisch mit einem riskanten Major-Wechsel behoben worden.

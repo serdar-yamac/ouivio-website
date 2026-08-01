@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { getSupabaseClient } from "../../lib/supabase";
 import type { Task } from "../../lib/tasks";
+import { ensureWeddingWorkspace } from "../../lib/workspace";
 
 const sections = ["Übersicht", "Planung", "Kalender", "Budget", "Anbieter", "Gäste"] as const;
 type Section = (typeof sections)[number];
@@ -32,7 +35,11 @@ function Ring({ value }: { value: number }) {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [active, setActive] = useState<Section>("Übersicht");
+  const [authReady, setAuthReady] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [tasks, setTasks] = useState(initialTasks);
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState("");
@@ -85,6 +92,37 @@ export default function Home() {
   };
 
   useEffect(() => {
+    const supabase = getSupabaseClient();
+    let activeSubscription = true;
+
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (!activeSubscription) return;
+        if (!data.user) {
+          router.replace("/login");
+          return;
+        }
+        await ensureWeddingWorkspace(data.user);
+        if (!activeSubscription) return;
+        setUserEmail(data.user.email ?? "Ouivio Konto");
+        setAuthReady(true);
+      } catch {
+        if (activeSubscription) setAuthError("Der persönliche Workspace konnte noch nicht geladen werden.");
+      }
+    })();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) router.replace("/login");
+    });
+
+    return () => {
+      activeSubscription = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  useEffect(() => {
     const savedTasks = window.localStorage.getItem("ouivio.tasks.v2");
     if (savedTasks) {
       try {
@@ -100,6 +138,15 @@ export default function Home() {
     if (loaded) window.localStorage.setItem("ouivio.tasks.v2", JSON.stringify(tasks));
   }, [loaded, tasks]);
 
+  const signOut = async () => {
+    await getSupabaseClient().auth.signOut();
+    router.replace("/login");
+  };
+
+  if (!authReady) {
+    return <main className="auth-loading" aria-live="polite"><span>Ouivio</span><p role={authError ? "alert" : undefined}>{authError || "Euer Workspace wird sicher geöffnet …"}</p>{authError && <button className="secondary-button" onClick={() => window.location.reload()} type="button">Erneut versuchen</button>}</main>;
+  }
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -107,14 +154,15 @@ export default function Home() {
         <nav aria-label="Hauptnavigation">
           {sections.map((item) => <button className={active === item ? "active" : ""} key={item} onClick={() => setActive(item)}><i aria-hidden>{item === "Übersicht" ? "⌂" : item === "Planung" ? "✓" : item === "Kalender" ? "□" : item === "Budget" ? "€" : item === "Anbieter" ? "◇" : "♙"}</i><span>{item}</span></button>)}
         </nav>
-        <div className="profile"><span>S&D</span><div><strong>Sarah & Daniel</strong><small>14. August 2027</small></div></div>
+        <div className="profile"><span>{accountInitials(userEmail)}</span><div><strong>{userEmail}</strong><small>Sicher angemeldet</small></div></div>
       </aside>
 
       <section className="content">
         <header className="topbar">
           <div><small>Wedding workspace</small><strong>{active}</strong></div>
           <label className="search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Suchen …" /></label>
-          <button className="avatar" aria-label="Benachrichtigungen">S&D</button>
+          <button className="logout-button" onClick={signOut} type="button">Abmelden</button>
+          <span className="avatar" aria-label="Angemeldetes Konto">{accountInitials(userEmail)}</span>
         </header>
 
         {active === "Übersicht" && <>
@@ -170,4 +218,8 @@ function Page({ title, intro, children }: { title: string; intro: string; childr
 function formatDueDate(value: string | null) {
   if (!value) return "";
   return `Fällig am ${new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(`${value}T12:00:00`))}`;
+}
+
+function accountInitials(email: string) {
+  return email.slice(0, 2).toUpperCase() || "OU";
 }
