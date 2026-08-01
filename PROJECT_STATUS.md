@@ -59,11 +59,13 @@ Technische Grundlage:
 - Row-Level Security ist auf allen acht Tabellen aktiv; elf Richtlinien begrenzen den Zugriff auf authentifizierte Mitglieder beziehungsweise Eigentümer.
 - Die interne Mitgliedschaftsprüfung liegt im nicht exponierten `private`-Schema und kann nicht von anonymen Nutzern ausgeführt werden.
 - Der Supabase Security Advisor meldet nach der Migration keine Fehler, Warnungen oder weiteren Hinweise.
+- Die lokalen Entwicklungsvariablen verweisen auf das eigenständige EU-Projekt; `.env.local` bleibt über `.gitignore` vom Repository ausgeschlossen.
+- Vercel Preview besitzt branch-spezifische öffentliche Verbindungswerte für `feat/ouivio-core-foundation`. Die bestehenden Production- und Marketplace-Variablen wurden nicht verändert.
 
 ## Bekannte Einschränkungen
 
 - Das Dashboard verwendet überwiegend fest codierte Demo-Daten.
-- Das Supabase-Datenbankschema ist im Projekt `Ouivio` aktiv und eine typisierte REST-Datenzugriffsschicht ist vorbereitet; Anwendungsvariablen und Authentifizierung sind noch nicht verbunden.
+- Das Supabase-Datenbankschema ist im Projekt `Ouivio` aktiv, die öffentlichen Anwendungsvariablen sind lokal und für den Feature-Branch in Vercel Preview verbunden, und eine typisierte REST-Datenzugriffsschicht ist vorbereitet; Authentifizierung ist noch nicht umgesetzt.
 - Es gibt keine Benutzerkonten, Anmeldung oder Autorisierung.
 - Aufgaben werden bis zur Aktivierung von Supabase Auth weiterhin nur lokal im jeweiligen Browser gespeichert und nicht zwischen Geräten synchronisiert.
 - Kalendertermine sind nicht editierbar und nicht mit Google Calendar oder Outlook verbunden.
@@ -78,10 +80,9 @@ Technische Grundlage:
 
 Priorität 1 – Produktgrundlage:
 
-1. Öffentliche Supabase-Verbindungswerte sicher für lokale Entwicklung und Vercel Preview hinterlegen; niemals den `service_role`-Schlüssel im Browser verwenden.
-2. Authentifizierung, geschützte Dashboard-Routen und Mandantentrennung umsetzen.
-3. Dashboard-Aufgaben nach der Anmeldung über die vorbereitete REST-Schicht synchronisieren.
-4. Demo-Daten schrittweise durch echte, benutzerspezifische Daten ersetzen.
+1. Authentifizierung, geschützte Dashboard-Routen und Mandantentrennung umsetzen.
+2. Dashboard-Aufgaben nach der Anmeldung über die vorbereitete REST-Schicht synchronisieren.
+3. Demo-Daten schrittweise durch echte, benutzerspezifische Daten ersetzen.
 
 Priorität 2 – Kernfunktionen:
 
@@ -125,3 +126,5 @@ Priorität 3 – Qualität und Betrieb:
 - Supabase-Migration im eigenständigen EU-Projekt erfolgreich ausgeführt und geprüft: 8 Tabellen, 8 Tabellen mit RLS und 11 Richtlinien.
 - Berechtigungsprüfung erfolgreich: `authenticated` darf die interne Mitgliedschaftsfunktion ausführen, `anon` nicht.
 - Supabase Security Advisor geprüft: 0 Fehler, 0 Warnungen und 0 Hinweise.
+- Lokale Verbindung geprüft: Supabase Auth-Einstellungen antworten mit HTTP 200; anonyme Anbieterabfrage liefert wegen RLS keine Datensätze.
+- Vercel-Konfiguration geprüft: `NEXT_PUBLIC_SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_ANON_KEY` sind ausschließlich für Preview und den Branch `feat/ouivio-core-foundation` hinterlegt; Production blieb unverändert.
