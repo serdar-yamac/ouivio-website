@@ -59,6 +59,10 @@ Technische Grundlage:
 - Nicht angemeldete Dashboard-Aufrufe werden zur Anmeldung weitergeleitet; Sitzungen werden automatisch gespeichert und erneuert.
 - Nach der ersten bestätigten Anmeldung wird automatisch ein persönlicher Hochzeitsbereich mit Eigentümer-Mitgliedschaft angelegt.
 - Abmeldung ist direkt im Dashboard möglich.
+- Registrierung unterscheidet Kunden- und Partnerkonten und leitet nach der Anmeldung in den passenden Bereich weiter.
+- Partner besitzen unter `/partner` ein eigenständiges responsives Dashboard mit Kennzahlen, Monatskalender und Tagesagenda.
+- Partnertermine werden als Anfrage, Option, Buchung, Termin oder Sperrzeit im persönlichen Supabase-Partnerbereich gespeichert.
+- Ein Integrationszentrum für Google Calendar, Outlook/Microsoft 365 und Apple Calendar/iCalendar ist vorbereitet; die produktiven Verbindungen benötigen noch die jeweiligen Anbieter-Zugangsdaten.
 
 ### Deployment
 
@@ -70,7 +74,8 @@ Technische Grundlage:
 ### Datenbankgrundlage
 
 - Die Migration `supabase/migrations/001_initial_schema.sql` ist im eigenständigen Supabase-Projekt `Ouivio` ausgeführt.
-- Acht Tabellen für Hochzeiten, Mitglieder, Aufgaben, Termine, Budget, Gäste, Anbieter und Favoriten sind angelegt.
+- Zwölf öffentliche Tabellen sind angelegt. Kontoprofile, Partnerprofile, Partnerkalendertermine und Kalenderverbindungen ergänzen die acht Tabellen der Kundenplanung.
+- Geheimnisse externer Kalenderverbindungen liegen im nicht exponierten `private`-Schema und sind für Browserrollen vollständig gesperrt.
 - Row-Level Security ist auf allen acht Tabellen aktiv; elf Richtlinien begrenzen den Zugriff auf authentifizierte Mitglieder beziehungsweise Eigentümer.
 - Die interne Mitgliedschaftsprüfung liegt im nicht exponierten `private`-Schema und kann nicht von anonymen Nutzern ausgeführt werden.
 - Der Supabase Security Advisor meldet nach der Migration keine Fehler, Warnungen oder weiteren Hinweise.
@@ -84,6 +89,7 @@ Technische Grundlage:
 - Authentifizierung und clientseitiger Routenschutz sind umgesetzt; ein vollständiger Registrierungstest mit echter E-Mail-Bestätigung erfordert noch ein Benutzerkonto.
 - Frühere Browser-Demoaufgaben aus `ouivio.tasks.v2` werden bewusst nicht automatisch in einen echten Benutzerbereich übernommen.
 - Kalendertermine sind nicht editierbar und nicht mit Google Calendar oder Outlook verbunden.
+- Die Partner-Kalenderoberfläche und das Sync-Datenmodell sind fertig; echte Zwei-Wege-Synchronisation ist bis zur Einrichtung von Google-/Microsoft-OAuth und Apple iCalendar/CalDAV noch nicht aktiv.
 - Anbieterprofile, Detailansichten, Verfügbarkeit, Anfragen und Buchungen sind noch nicht produktiv umgesetzt.
 - Einladungslinks verwenden vor dem Production-Rollout bewusst den stabilen Vercel-Feature-Branch-Alias; die endgültige Ouivio-Domain muss vor dem öffentlichen Start eingesetzt werden.
 - Gästelisten-Import, Haushalte, Begleitpersonen und serverseitiger automatischer Versand fehlen noch; persönliche Links können bereits über WhatsApp, Instagram oder das Standard-Mailprogramm geteilt werden.
@@ -103,6 +109,7 @@ Priorität 2 – Kernfunktionen:
 
 1. Aufgaben mehreren Mitgliedern zuweisen und die gemeinsame Bearbeitung ausbauen.
 2. Kalender mit editierbaren Terminen sowie später Google-/Outlook-Synchronisation ausbauen.
+3. Google Calendar und Microsoft Graph per OAuth anbinden, Webhook-/Delta-Synchronisation ergänzen und Apple/iCalendar serverseitig bereitstellen.
 3. Budget um Beleg-Uploads, Fälligkeiten und detaillierte Kategorienauswertungen erweitern.
 4. Gästeliste um Import, Haushalte, Begleitpersonen und E-Mail-Einladungsversand erweitern.
 5. Anbieterprofile, Filter, Favoriten, Anfragen, Verfügbarkeit und Buchungsablauf entwickeln.
@@ -133,6 +140,8 @@ Priorität 3 – Qualität und Betrieb:
 - Das Grundschema umfasst Hochzeiten, Mitglieder, Aufgaben, Termine, Budgetposten, Gäste, Anbieter und Favoriten.
 - Interne RLS-Hilfsfunktionen liegen im nicht exponierten `private`-Schema; Funktions- und Tabellenrechte sind explizit auf authentifizierte Nutzer begrenzt.
 - Supabase Auth verwaltet Browser-Sitzungen; Autorisierung erfolgt ausschließlich über Datenbank-RLS und nicht über bearbeitbare Nutzer-Metadaten.
+- Die Kontoart wird nach der Registrierungswahl in einem RLS-geschützten Kontoprofil festgeschrieben. Partnerzugänge erzeugen keinen Hochzeitsbereich.
+- Ouivio ist die führende Kalenderdatenquelle; externe Kalender werden providerneutral über Quellen, externe Ereignis-IDs und Sync-Cursor abgeglichen.
 
 ## Letzte Prüfung
 
@@ -167,3 +176,5 @@ Priorität 3 – Qualität und Betrieb:
 - Lokale Browserprüfung der öffentlichen Einladungsroute erfolgreich: ungültiger Token zeigt den sicheren Nicht-gefunden-Zustand ohne Fehler-Overlay oder Konsolenfehler.
 - Transaktionaler RSVP-Ende-zu-Ende-Test erfolgreich: Testgast angelegt, Einladung als `anon` gelesen, Zusage als `anon` gespeichert, Antwortzeitpunkt geprüft und sämtliche Testdaten per `ROLLBACK` verworfen.
 - Abhängigkeitsprüfung ausgeführt: keine kritischen Hinweise; drei hohe transitive Hinweise der bestehenden Next.js-15-Lieferkette sind dokumentiert und nicht automatisch mit einem riskanten Major-Wechsel behoben worden.
+- Partner-Kalendergrundlage in Supabase angewendet und geprüft: vier neue öffentliche Tabellen mit aktiver RLS sowie ein privater, für Browserrollen gesperrter Secret-Speicher.
+- TypeScript-Prüfung und optimierter Production-Build einschließlich der neuen Route `/partner` erfolgreich.

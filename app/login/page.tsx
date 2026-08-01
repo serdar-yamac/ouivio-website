@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getSupabaseClient } from "../../lib/supabase";
 import { ensureWeddingWorkspace } from "../../lib/workspace";
+import { ensureAccountProfile, ensurePartnerProfile, type AccountType } from "../../lib/account";
 import styles from "./login.module.css";
 
 type Mode = "signin" | "signup";
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [partnerNames, setPartnerNames] = useState("");
+  const [accountType, setAccountType] = useState<AccountType>("customer");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -22,9 +24,20 @@ export default function LoginPage() {
   useEffect(() => {
     const supabase = getSupabaseClient();
     void supabase.auth.getUser().then(({ data }) => {
-      if (data.user) router.replace("/dashboard");
+      if (data.user) void routeAuthenticatedUser(data.user);
     });
   }, [router]);
+
+  const routeAuthenticatedUser = async (user: import("@supabase/supabase-js").User) => {
+    const profile = await ensureAccountProfile(user);
+    if (profile.type === "partner") {
+      await ensurePartnerProfile(user.id, profile.displayName);
+      router.replace("/partner");
+    } else {
+      await ensureWeddingWorkspace(user);
+      router.replace("/dashboard");
+    }
+  };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -39,8 +52,8 @@ export default function LoginPage() {
           email,
           password,
           options: {
-            data: { partner_names: partnerNames.trim() },
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            data: { partner_names: accountType === "customer" ? partnerNames.trim() : undefined, account_type: accountType, display_name: partnerNames.trim() },
+            emailRedirectTo: `${window.location.origin}/login`,
           },
         });
         if (signUpError) throw signUpError;
@@ -48,13 +61,12 @@ export default function LoginPage() {
           setMessage("Bitte bestätigt eure E-Mail. Danach könnt ihr euch anmelden.");
           return;
         }
-        if (data.user) await ensureWeddingWorkspace(data.user);
+        if (data.user) await routeAuthenticatedUser(data.user);
       } else {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
-        await ensureWeddingWorkspace(data.user);
+        await routeAuthenticatedUser(data.user);
       }
-      router.replace("/dashboard");
     } catch (caught) {
       setError(authErrorMessage(caught));
     } finally {
@@ -76,7 +88,8 @@ export default function LoginPage() {
         </div>
 
         <form className={styles.form} onSubmit={submit}>
-          {mode === "signup" && <label>Eure Namen<input autoComplete="name" maxLength={120} onChange={(event) => setPartnerNames(event.target.value)} placeholder="Zum Beispiel: Sarah & Daniel" required value={partnerNames}/></label>}
+          {mode === "signup" && <fieldset className={styles.accountChoice}><legend>Wie möchtet ihr Ouivio nutzen?</legend><button aria-pressed={accountType === "customer"} onClick={() => setAccountType("customer")} type="button"><strong>Hochzeit planen</strong><span>Für Paare und ihre Planung</span></button><button aria-pressed={accountType === "partner"} onClick={() => setAccountType("partner")} type="button"><strong>Als Partner anbieten</strong><span>Für Locations und Dienstleister</span></button></fieldset>}
+          {mode === "signup" && <label>{accountType === "partner" ? "Unternehmensname" : "Eure Namen"}<input autoComplete="name" maxLength={120} onChange={(event) => setPartnerNames(event.target.value)} placeholder={accountType === "partner" ? "Zum Beispiel: Gut Sonnenhof" : "Zum Beispiel: Sarah & Daniel"} required value={partnerNames}/></label>}
           <label>E-Mail-Adresse<input autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder="ihr@beispiel.de" required type="email" value={email}/></label>
           <label>Passwort<input autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password}/></label>
           {error && <p className={styles.error} role="alert">{error}</p>}

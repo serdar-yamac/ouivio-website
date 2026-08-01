@@ -26,3 +26,10 @@
 .promise span { max-width: 500px; color: #ffe2e6; line-height: 1.65; margin-top: 25px; }
 @media (max-width: 900px) { .shell { grid-template-columns: 1fr; } .promise { min-height: 380px; order: -1; } .panel { padding-top: 36px; } .logo { margin-bottom: 44px; } }
 @media (max-width: 600px) { .panel { width: min(100% - 30px, 560px); padding-bottom: 40px; } .promise { margin: 8px; min-height: 300px; padding: 28px; border-radius: 25px; } .promise strong { font-size: 43px; } .promise span { font-size: 14px; } }
+.accountChoice { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.accountChoice legend { grid-column: 1 / -1; font-size: 13px; font-weight: 750; margin-bottom: 8px; }
+.accountChoice button { border: 1px solid #e5ddd8; border-radius: 14px; background: #fff; padding: 14px; text-align: left; cursor: pointer; }
+.accountChoice button[aria-pressed="true"] { border-color: #df1632; background: #fff4f5; box-shadow: 0 0 0 2px rgba(223,22,50,.08); }
+.accountChoice strong, .accountChoice span { display: block; }
+.accountChoice span { color: #766e6a; font-size: 11px; margin-top: 4px; line-height: 1.35; }
+@media (max-width: 520px) { .accountChoice { grid-template-columns: 1fr; } }

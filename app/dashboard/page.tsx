@@ -29,6 +29,7 @@ import {
   type Task,
 } from "../../lib/tasks";
 import { ensureWeddingWorkspace } from "../../lib/workspace";
+import { ensureAccountProfile } from "../../lib/account";
 
 const sections = [
   "Übersicht",
@@ -467,6 +468,11 @@ export default function Home() {
         if (!activeSubscription) return;
         if (!data.user) {
           router.replace("/login");
+          return;
+        }
+        const account = await ensureAccountProfile(data.user);
+        if (account.type === "partner") {
+          router.replace("/partner");
           return;
         }
         const workspaceId = await ensureWeddingWorkspace(data.user);
