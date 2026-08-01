@@ -149,21 +149,43 @@
     }
     @media (max-width:620px){
       .container{width:min(100% - 24px,1180px)}
+      .nav-inner,.hero-grid,.section-head,.pilot,.showcase-content,.metric-grid,.cards,.steps,.form-grid{min-width:0}
       .nav-inner{height:68px}
       .brand img{width:102px}
       .nav .btn{padding:11px 15px;font-size:13px}
       .hero{padding:55px 0 60px}
-      h1{font-size:50px}
+      h1{font-size:clamp(38px,12vw,50px);line-height:1.01;overflow-wrap:anywhere}
+      h2{font-size:clamp(31px,9.5vw,42px);overflow-wrap:anywhere}
+      .lead,.section-copy{font-size:16px}
+      .hero-actions{display:grid;grid-template-columns:1fr;width:100%}
+      .hero-actions .btn{width:100%;min-height:48px}
+      .trust{display:grid;gap:9px}
+      .showcase{min-height:440px;border-radius:28px}
       .showcase-content{padding:26px}
+      .showcase-logo{width:min(100%,280px)}
       .floating-card{display:none}
       .metric-grid{grid-template-columns:1fr}
+      .metric{padding:16px}
+      .metric b{font-size:25px}
       .cards{gap:12px}
       .card{padding:24px}
       section{padding:70px 0}
+      .steps-wrap{padding:34px 22px;border-radius:28px}
       .pilot-panel,form{padding:28px}
       .form-grid{grid-template-columns:1fr}
       .full{grid-column:auto}
+      input,select,textarea{max-width:100%}
       .footer-inner{flex-direction:column;align-items:flex-start}
+    }
+    @media (max-width:380px){
+      .container{width:calc(100% - 20px)}
+      .brand img{width:92px}
+      .nav .btn{padding:10px 12px;font-size:12px}
+      .hero{padding-top:42px}
+      h1{font-size:clamp(36px,11.7vw,44px)}
+      .showcase{min-height:420px}
+      .showcase-content{padding:22px}
+      .card,.pilot-panel,form{padding:22px}
     }
   </style>
 </head>
