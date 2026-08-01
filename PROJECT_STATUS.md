@@ -38,7 +38,8 @@ Technische Grundlage:
 - Übersicht mit Countdown, Planungsfortschritt, Budget-, Gäste- und Anbieterkennzahlen.
 - Aufgaben können als erledigt/offen markiert werden.
 - Aufgaben können angelegt, bearbeitet, mit einem Fälligkeitsdatum versehen und gelöscht werden.
-- Aufgabenstatus und Aufgabendaten werden im Browser über das versionierte Schema `ouivio.tasks.v2` gespeichert.
+- Aufgaben werden benutzerspezifisch im persönlichen Supabase-Hochzeitsbereich gespeichert und durch Row-Level Security geschützt.
+- Aufgaben werden nach der Anmeldung aus der Cloud geladen; Anlegen, Bearbeiten, Statuswechsel und Löschen werden geräteübergreifend synchronisiert.
 - Kalender zeigt eine statische Terminzeitleiste.
 - Budget zeigt Gesamtbudget und statische Kategorien.
 - Anbieteransicht zeigt Matches; die globale Suche filtert die Anbieter lokal.
@@ -69,9 +70,9 @@ Technische Grundlage:
 ## Bekannte Einschränkungen
 
 - Das Dashboard verwendet überwiegend fest codierte Demo-Daten.
-- Das Supabase-Datenbankschema ist im Projekt `Ouivio` aktiv, die öffentlichen Anwendungsvariablen sind lokal und für den Feature-Branch in Vercel Preview verbunden, und eine typisierte REST-Datenzugriffsschicht ist vorbereitet.
+- Das Supabase-Datenbankschema ist im Projekt `Ouivio` aktiv, die öffentlichen Anwendungsvariablen sind lokal und für den Feature-Branch in Vercel Preview verbunden.
 - Authentifizierung und clientseitiger Routenschutz sind umgesetzt; ein vollständiger Registrierungstest mit echter E-Mail-Bestätigung erfordert noch ein Benutzerkonto.
-- Aufgaben werden bis zur Aktivierung von Supabase Auth weiterhin nur lokal im jeweiligen Browser gespeichert und nicht zwischen Geräten synchronisiert.
+- Frühere Browser-Demoaufgaben aus `ouivio.tasks.v2` werden bewusst nicht automatisch in einen echten Benutzerbereich übernommen.
 - Kalendertermine sind nicht editierbar und nicht mit Google Calendar oder Outlook verbunden.
 - Budgetposten können nicht angelegt, geändert oder bezahlt markiert werden.
 - Anbieterprofile, Detailansichten, Verfügbarkeit, Anfragen und Buchungen sind noch nicht produktiv umgesetzt.
@@ -85,13 +86,12 @@ Technische Grundlage:
 
 Priorität 1 – Produktgrundlage:
 
-1. Dashboard-Aufgaben nach der Anmeldung über die vorbereitete REST-Schicht synchronisieren.
-2. Registrierung und E-Mail-Bestätigung mit einem echten Benutzerkonto Ende-zu-Ende prüfen.
-3. Demo-Daten schrittweise durch echte, benutzerspezifische Daten ersetzen.
+1. Registrierung und E-Mail-Bestätigung mit einem echten Benutzerkonto Ende-zu-Ende prüfen.
+2. Demo-Daten schrittweise durch echte, benutzerspezifische Daten ersetzen.
 
 Priorität 2 – Kernfunktionen:
 
-1. Aufgaben nach Supabase-Aktivierung mehreren Mitgliedern zuweisen und geräteübergreifend synchronisieren.
+1. Aufgaben mehreren Mitgliedern zuweisen und die gemeinsame Bearbeitung ausbauen.
 2. Kalender mit editierbaren Terminen sowie später Google-/Outlook-Synchronisation ausbauen.
 3. Budgetkategorien, Ausgaben, Zahlungsstatus und Belege verwalten.
 4. Gästeliste mit Import, Haushalten, RSVP, Ernährungswünschen und Einladungsstatus erweitern.
@@ -114,8 +114,8 @@ Priorität 3 – Qualität und Betrieb:
 - `AGENTS.md` und `PROJECT_STATUS.md` sind vor jeder Änderung zu lesen.
 - `PROJECT_STATUS.md` wird nach jedem größeren Arbeitsschritt aktualisiert.
 - Beauftragte Entwicklungsänderungen werden nach erfolgreicher Prüfung automatisch auf `feat/ouivio-core-foundation` committed und gepusht; diese Freigabe umfasst weder `main` noch Production-Deployments oder andere externe Änderungen.
-- Der derzeitige `localStorage`-Ansatz ist nur eine Prototyp-Lösung und keine langfristige Datenarchitektur.
-- Supabase/Postgres ist als persistente Datenbasis vorbereitet. Row-Level Security bleibt verpflichtend; anonyme öffentliche Schreibrechte werden nicht geöffnet.
+- Supabase/Postgres ist die persistente Datenbasis. Row-Level Security bleibt verpflichtend; anonyme öffentliche Schreibrechte werden nicht geöffnet.
+- Vorhandene lokale Demoaufgaben werden nicht automatisch in neue Benutzerkonten kopiert, damit echte Bereiche sauber beginnen.
 - Das Grundschema umfasst Hochzeiten, Mitglieder, Aufgaben, Termine, Budgetposten, Gäste, Anbieter und Favoriten.
 - Interne RLS-Hilfsfunktionen liegen im nicht exponierten `private`-Schema; Funktions- und Tabellenrechte sind explizit auf authentifizierte Nutzer begrenzt.
 - Supabase Auth verwaltet Browser-Sitzungen; Autorisierung erfolgt ausschließlich über Datenbank-RLS und nicht über bearbeitbare Nutzer-Metadaten.
@@ -137,4 +137,6 @@ Priorität 3 – Qualität und Betrieb:
 - Supabase Auth Site URL auf den stabilen Feature-Branch-Preview gesetzt; E-Mail-/Passwort-Authentifizierung ist für das Projekt aktiv.
 - Auth-Ablauf lokal geprüft: `/dashboard` leitet ohne Sitzung nach `/login`, ein ungültiger Login wird abgewiesen und verständlich angezeigt.
 - TypeScript-Prüfung und optimierter Production-Build nach Einführung von Supabase Auth erfolgreich.
+- Optimierter Next.js-Production-Build nach Umstellung der Aufgabenverwaltung auf Supabase erfolgreich.
+- Integrität der geschützten Startseiten erneut per SHA-256 bestätigt; beide Dateien entsprechen unverändert dem festgelegten Hash.
 - Abhängigkeitsprüfung ausgeführt: keine kritischen Hinweise; drei hohe transitive Hinweise der bestehenden Next.js-15-Lieferkette sind dokumentiert und nicht automatisch mit einem riskanten Major-Wechsel behoben worden.

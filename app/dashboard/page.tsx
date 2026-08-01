@@ -4,18 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "../../lib/supabase";
-import type { Task } from "../../lib/tasks";
+import { createTask, deleteTask, fetchTasks, updateTask, type Task } from "../../lib/tasks";
 import { ensureWeddingWorkspace } from "../../lib/workspace";
 
 const sections = ["Übersicht", "Planung", "Kalender", "Budget", "Anbieter", "Gäste"] as const;
 type Section = (typeof sections)[number];
-
-const initialTasks: Task[] = [
-  { id: "photographer", title: "Fotograf auswählen", meta: "Empfohlen bis 20. September", done: false, dueDate: null, createdAt: "2026-08-01T00:00:00.000Z" },
-  { id: "save-the-date", title: "Save-the-Date versenden", meta: "86 Empfänger vorbereitet", done: false, dueDate: null, createdAt: "2026-08-01T00:01:00.000Z" },
-  { id: "location", title: "Location bestätigen", meta: "Gut Sonnenhof · Köln", done: true, dueDate: null, createdAt: "2026-08-01T00:02:00.000Z" },
-  { id: "tasting", title: "Menüverkostung terminieren", meta: "Bis 12. Oktober", done: false, dueDate: null, createdAt: "2026-08-01T00:03:00.000Z" },
-];
 
 const vendors = [
   { icon: "📷", name: "Luma Fotografie", meta: "Fotografie · Köln", match: 96, price: "ab 2.400 €" },
@@ -40,18 +33,37 @@ export default function Home() {
   const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState("");
   const [userEmail, setUserEmail] = useState("");
-  const [tasks, setTasks] = useState(initialTasks);
-  const [loaded, setLoaded] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [weddingId, setWeddingId] = useState("");
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [taskSaving, setTaskSaving] = useState(false);
+  const [taskError, setTaskError] = useState("");
   const [query, setQuery] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskMeta, setTaskMeta] = useState("");
   const [taskDueDate, setTaskDueDate] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const done = tasks.filter((task) => task.done).length;
-  const progress = Math.round((done / tasks.length) * 100);
+  const progress = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
   const filteredVendors = useMemo(() => vendors.filter((vendor) => `${vendor.name} ${vendor.meta}`.toLowerCase().includes(query.toLowerCase())), [query]);
 
-  const toggleTask = (id: string) => setTasks((current) => current.map((task) => task.id === id ? { ...task, done: !task.done } : task));
+  const toggleTask = async (id: string) => {
+    const currentTask = tasks.find((task) => task.id === id);
+    if (!currentTask || taskSaving) return;
+    const nextTask = { ...currentTask, done: !currentTask.done };
+    setTaskError("");
+    setTaskSaving(true);
+    setTasks((current) => current.map((task) => task.id === id ? nextTask : task));
+    try {
+      const savedTask = await updateTask(nextTask);
+      setTasks((current) => current.map((task) => task.id === id ? savedTask : task));
+    } catch {
+      setTasks((current) => current.map((task) => task.id === id ? currentTask : task));
+      setTaskError("Die Aufgabe konnte nicht synchronisiert werden. Bitte versucht es erneut.");
+    } finally {
+      setTaskSaving(false);
+    }
+  };
 
   const resetTaskForm = () => {
     setTaskTitle("");
@@ -60,23 +72,28 @@ export default function Home() {
     setEditingTaskId(null);
   };
 
-  const submitTask = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitTask = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const title = taskTitle.trim();
-    if (!title) return;
-    if (editingTaskId) {
-      setTasks((current) => current.map((task) => task.id === editingTaskId ? { ...task, title, meta: taskMeta.trim(), dueDate: taskDueDate || null } : task));
-    } else {
-      setTasks((current) => [...current, {
-        id: window.crypto.randomUUID(),
-        title,
-        meta: taskMeta.trim(),
-        done: false,
-        dueDate: taskDueDate || null,
-        createdAt: new Date().toISOString(),
-      }]);
+    if (!title || !weddingId || taskSaving) return;
+    setTaskError("");
+    setTaskSaving(true);
+    try {
+      if (editingTaskId) {
+        const currentTask = tasks.find((task) => task.id === editingTaskId);
+        if (!currentTask) return;
+        const savedTask = await updateTask({ ...currentTask, title, meta: taskMeta.trim(), dueDate: taskDueDate || null });
+        setTasks((current) => current.map((task) => task.id === editingTaskId ? savedTask : task));
+      } else {
+        const savedTask = await createTask(weddingId, { title, meta: taskMeta.trim(), dueDate: taskDueDate || null });
+        setTasks((current) => [...current, savedTask]);
+      }
+      resetTaskForm();
+    } catch {
+      setTaskError("Die Aufgabe konnte nicht gespeichert werden. Bitte versucht es erneut.");
+    } finally {
+      setTaskSaving(false);
     }
-    resetTaskForm();
   };
 
   const editTask = (task: Task) => {
@@ -86,9 +103,21 @@ export default function Home() {
     setEditingTaskId(task.id);
   };
 
-  const removeTask = (id: string) => {
+  const removeTask = async (id: string) => {
+    if (taskSaving) return;
+    const previousTasks = tasks;
+    setTaskError("");
+    setTaskSaving(true);
     setTasks((current) => current.filter((task) => task.id !== id));
     if (editingTaskId === id) resetTaskForm();
+    try {
+      await deleteTask(id);
+    } catch {
+      setTasks(previousTasks);
+      setTaskError("Die Aufgabe konnte nicht gelöscht werden. Bitte versucht es erneut.");
+    } finally {
+      setTaskSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -103,12 +132,19 @@ export default function Home() {
           router.replace("/login");
           return;
         }
-        await ensureWeddingWorkspace(data.user);
+        const workspaceId = await ensureWeddingWorkspace(data.user);
+        const cloudTasks = await fetchTasks(workspaceId);
         if (!activeSubscription) return;
+        setWeddingId(workspaceId);
+        setTasks(cloudTasks);
+        setTasksLoading(false);
         setUserEmail(data.user.email ?? "Ouivio Konto");
         setAuthReady(true);
       } catch {
-        if (activeSubscription) setAuthError("Der persönliche Workspace konnte noch nicht geladen werden.");
+        if (activeSubscription) {
+          setTasksLoading(false);
+          setAuthError("Der persönliche Workspace konnte noch nicht geladen werden.");
+        }
       }
     })();
 
@@ -121,22 +157,6 @@ export default function Home() {
       listener.subscription.unsubscribe();
     };
   }, [router]);
-
-  useEffect(() => {
-    const savedTasks = window.localStorage.getItem("ouivio.tasks.v2");
-    if (savedTasks) {
-      try {
-        setTasks(JSON.parse(savedTasks));
-      } catch {
-        window.localStorage.removeItem("ouivio.tasks.v2");
-      }
-    }
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (loaded) window.localStorage.setItem("ouivio.tasks.v2", JSON.stringify(tasks));
-  }, [loaded, tasks]);
 
   const signOut = async () => {
     await getSupabaseClient().auth.signOut();
@@ -176,7 +196,7 @@ export default function Home() {
             <button className="card stat" onClick={() => setActive("Anbieter")}><span>Anbieter</span><strong>3 Matches</strong><small>Für euch vorausgewählt</small><div className="faces"><i>📷</i><i>♫</i><i>✿</i></div></button>
           </section>
           <section className="detail-grid">
-            <article className="card"><div className="card-head"><div><small>Als Nächstes</small><h2>Eure Aufgaben</h2></div><button onClick={() => setActive("Planung")}>Alle ansehen →</button></div>{tasks.slice(0,3).map((task) => <button className="row task" onClick={() => toggleTask(task.id)} key={task.id}><span className={task.done ? "check done" : "check"}>{task.done ? "✓" : ""}</span><span><strong>{task.title}</strong><small>{task.meta || formatDueDate(task.dueDate)}</small></span></button>)}</article>
+            <article className="card"><div className="card-head"><div><small>Als Nächstes</small><h2>Eure Aufgaben</h2></div><button onClick={() => setActive("Planung")}>Alle ansehen →</button></div>{tasksLoading ? <p className="empty-state">Aufgaben werden geladen …</p> : tasks.length === 0 ? <p className="empty-state">Noch keine Aufgaben. Beginnt mit eurem ersten Schritt.</p> : tasks.slice(0,3).map((task) => <button className="row task" disabled={taskSaving} onClick={() => void toggleTask(task.id)} key={task.id}><span className={task.done ? "check done" : "check"}>{task.done ? "✓" : ""}</span><span><strong>{task.title}</strong><small>{task.meta || formatDueDate(task.dueDate)}</small></span></button>)}</article>
             <article className="card"><div className="card-head"><div><small>Ouivio Auswahl</small><h2>Beste Matches</h2></div><button onClick={() => setActive("Anbieter")}>Entdecken →</button></div>{vendors.slice(0,2).map((vendor) => <div className="row vendor" key={vendor.name}><span className="vendor-icon">{vendor.icon}</span><span><strong>{vendor.name}</strong><small>{vendor.meta}</small></span><b>{vendor.match}%</b></div>)}</article>
           </section>
         </>}
@@ -184,20 +204,21 @@ export default function Home() {
         {active === "Planung" && <Page title="Planung" intro="Euer roter Faden bis zum Hochzeitstag. Erstellt Aufgaben, setzt Termine und behaltet jeden Meilenstein im Blick.">
           <div className="planning-grid">
             <form className="card task-form" onSubmit={submitTask}>
-              <div className="card-head"><div><small>{editingTaskId ? "Aufgabe bearbeiten" : "Neue Aufgabe"}</small><h2>{editingTaskId ? "Details aktualisieren" : "Was steht als Nächstes an?"}</h2></div><span className="storage-badge">Lokal gespeichert</span></div>
+              <div className="card-head"><div><small>{editingTaskId ? "Aufgabe bearbeiten" : "Neue Aufgabe"}</small><h2>{editingTaskId ? "Details aktualisieren" : "Was steht als Nächstes an?"}</h2></div><span className="storage-badge">Mit Supabase synchronisiert</span></div>
               <label>Titel<input autoComplete="off" maxLength={160} onChange={(event) => setTaskTitle(event.target.value)} placeholder="Zum Beispiel: Einladungen gestalten" required value={taskTitle}/></label>
               <label>Notiz<input autoComplete="off" maxLength={240} onChange={(event) => setTaskMeta(event.target.value)} placeholder="Optionaler Hinweis" value={taskMeta}/></label>
               <label>Fällig am<input onChange={(event) => setTaskDueDate(event.target.value)} type="date" value={taskDueDate}/></label>
-              <div className="form-actions"><button className="primary-button" type="submit">{editingTaskId ? "Änderungen speichern" : "Aufgabe hinzufügen"}</button>{editingTaskId && <button className="secondary-button" onClick={resetTaskForm} type="button">Abbrechen</button>}</div>
+              {taskError && <p className="sync-error" role="alert">{taskError}</p>}
+              <div className="form-actions"><button className="primary-button" disabled={taskSaving || !weddingId} type="submit">{taskSaving ? "Wird gespeichert …" : editingTaskId ? "Änderungen speichern" : "Aufgabe hinzufügen"}</button>{editingTaskId && <button className="secondary-button" disabled={taskSaving} onClick={resetTaskForm} type="button">Abbrechen</button>}</div>
             </form>
             <div className="card task-list">
               <div className="card-head"><div><small>{done} von {tasks.length} erledigt</small><h2>Eure Aufgaben</h2></div></div>
-              {tasks.length === 0 && <p className="empty-state">Noch keine Aufgaben. Legt links euren ersten Schritt an.</p>}
+              {tasksLoading ? <p className="empty-state">Aufgaben werden geladen …</p> : tasks.length === 0 && <p className="empty-state">Noch keine Aufgaben. Legt links euren ersten Schritt an.</p>}
               {tasks.map((task) => <div className="row task-manage" key={task.id}>
-                <button aria-label={`${task.title} als ${task.done ? "offen" : "erledigt"} markieren`} className={task.done ? "check done" : "check"} onClick={() => toggleTask(task.id)} type="button">{task.done ? "✓" : ""}</button>
+                <button aria-label={`${task.title} als ${task.done ? "offen" : "erledigt"} markieren`} className={task.done ? "check done" : "check"} disabled={taskSaving} onClick={() => void toggleTask(task.id)} type="button">{task.done ? "✓" : ""}</button>
                 <span><strong>{task.title}</strong><small>{task.meta || formatDueDate(task.dueDate) || "Ohne weitere Details"}</small></span>
                 <em>{task.done ? "Erledigt" : "Offen"}</em>
-                <div className="task-actions"><button onClick={() => editTask(task)} type="button">Bearbeiten</button><button className="danger" onClick={() => removeTask(task.id)} type="button">Löschen</button></div>
+                <div className="task-actions"><button disabled={taskSaving} onClick={() => editTask(task)} type="button">Bearbeiten</button><button className="danger" disabled={taskSaving} onClick={() => void removeTask(task.id)} type="button">Löschen</button></div>
               </div>)}
             </div>
           </div>
