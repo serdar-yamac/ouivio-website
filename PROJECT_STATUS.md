@@ -41,7 +41,9 @@ Technische Grundlage:
 - Aufgaben werden benutzerspezifisch im persönlichen Supabase-Hochzeitsbereich gespeichert und durch Row-Level Security geschützt.
 - Aufgaben werden nach der Anmeldung aus der Cloud geladen; Anlegen, Bearbeiten, Statuswechsel und Löschen werden geräteübergreifend synchronisiert.
 - Kalender zeigt eine statische Terminzeitleiste.
-- Budget zeigt Gesamtbudget und statische Kategorien.
+- Das Gesamtbudget kann geändert und sicher im persönlichen Supabase-Hochzeitsbereich gespeichert werden.
+- Budgetposten können mit Kategorie, geplantem und bezahltem Betrag sowie Status angelegt, bearbeitet und gelöscht werden.
+- Budgetübersicht und Dashboard-Kennzahl berechnen geplante, bezahlte und verfügbare Beträge aus den echten Benutzerdaten.
 - Anbieteransicht zeigt Matches; die globale Suche filtert die Anbieter lokal.
 - Gästeliste zeigt Namen, Gruppen und RSVP-Status.
 - Rücklink vom Dashboard zur Startseite ist vorhanden.
@@ -74,7 +76,6 @@ Technische Grundlage:
 - Authentifizierung und clientseitiger Routenschutz sind umgesetzt; ein vollständiger Registrierungstest mit echter E-Mail-Bestätigung erfordert noch ein Benutzerkonto.
 - Frühere Browser-Demoaufgaben aus `ouivio.tasks.v2` werden bewusst nicht automatisch in einen echten Benutzerbereich übernommen.
 - Kalendertermine sind nicht editierbar und nicht mit Google Calendar oder Outlook verbunden.
-- Budgetposten können nicht angelegt, geändert oder bezahlt markiert werden.
 - Anbieterprofile, Detailansichten, Verfügbarkeit, Anfragen und Buchungen sind noch nicht produktiv umgesetzt.
 - Gästedaten können nicht hinzugefügt, importiert, bearbeitet oder eingeladen werden.
 - Suche wirkt derzeit nur auf die lokale Anbieterliste.
@@ -93,7 +94,7 @@ Priorität 2 – Kernfunktionen:
 
 1. Aufgaben mehreren Mitgliedern zuweisen und die gemeinsame Bearbeitung ausbauen.
 2. Kalender mit editierbaren Terminen sowie später Google-/Outlook-Synchronisation ausbauen.
-3. Budgetkategorien, Ausgaben, Zahlungsstatus und Belege verwalten.
+3. Budget um Beleg-Uploads, Fälligkeiten und detaillierte Kategorienauswertungen erweitern.
 4. Gästeliste mit Import, Haushalten, RSVP, Ernährungswünschen und Einladungsstatus erweitern.
 5. Anbieterprofile, Filter, Favoriten, Anfragen, Verfügbarkeit und Buchungsablauf entwickeln.
 
@@ -116,6 +117,7 @@ Priorität 3 – Qualität und Betrieb:
 - Beauftragte Entwicklungsänderungen werden nach erfolgreicher Prüfung automatisch auf `feat/ouivio-core-foundation` committed und gepusht; diese Freigabe umfasst weder `main` noch Production-Deployments oder andere externe Änderungen.
 - Supabase/Postgres ist die persistente Datenbasis. Row-Level Security bleibt verpflichtend; anonyme öffentliche Schreibrechte werden nicht geöffnet.
 - Vorhandene lokale Demoaufgaben werden nicht automatisch in neue Benutzerkonten kopiert, damit echte Bereiche sauber beginnen.
+- Gesamtbudget und Budgetposten werden wie Aufgaben direkt im persönlichen Supabase-Bereich gespeichert und durch die vorhandene Mitgliedschafts-RLS geschützt.
 - Das Grundschema umfasst Hochzeiten, Mitglieder, Aufgaben, Termine, Budgetposten, Gäste, Anbieter und Favoriten.
 - Interne RLS-Hilfsfunktionen liegen im nicht exponierten `private`-Schema; Funktions- und Tabellenrechte sind explizit auf authentifizierte Nutzer begrenzt.
 - Supabase Auth verwaltet Browser-Sitzungen; Autorisierung erfolgt ausschließlich über Datenbank-RLS und nicht über bearbeitbare Nutzer-Metadaten.
@@ -139,4 +141,6 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Production-Build nach Einführung von Supabase Auth erfolgreich.
 - Optimierter Next.js-Production-Build nach Umstellung der Aufgabenverwaltung auf Supabase erfolgreich.
 - Integrität der geschützten Startseiten erneut per SHA-256 bestätigt; beide Dateien entsprechen unverändert dem festgelegten Hash.
+- TypeScript-Prüfung nach Einführung der editierbaren Supabase-Budgetverwaltung erfolgreich.
+- Optimierter Next.js-Production-Build und lokale Browserprüfung nach der Budgetanbindung erfolgreich; der geschützte Dashboard-Aufruf leitet ohne Sitzung fehlerfrei zur Anmeldung.
 - Abhängigkeitsprüfung ausgeführt: keine kritischen Hinweise; drei hohe transitive Hinweise der bestehenden Next.js-15-Lieferkette sind dokumentiert und nicht automatisch mit einem riskanten Major-Wechsel behoben worden.

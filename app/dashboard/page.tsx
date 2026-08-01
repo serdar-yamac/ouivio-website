@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { createBudgetItem, deleteBudgetItem, fetchBudget, saveTotalBudget, updateBudgetItem, type BudgetItem, type BudgetStatus } from "../../lib/budget";
 import { getSupabaseClient } from "../../lib/supabase";
 import { createTask, deleteTask, fetchTasks, updateTask, type Task } from "../../lib/tasks";
 import { ensureWeddingWorkspace } from "../../lib/workspace";
@@ -43,8 +44,24 @@ export default function Home() {
   const [taskMeta, setTaskMeta] = useState("");
   const [taskDueDate, setTaskDueDate] = useState("");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [totalBudget, setTotalBudget] = useState(0);
+  const [totalBudgetInput, setTotalBudgetInput] = useState("");
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [budgetLoading, setBudgetLoading] = useState(true);
+  const [budgetSaving, setBudgetSaving] = useState(false);
+  const [budgetError, setBudgetError] = useState("");
+  const [budgetTitle, setBudgetTitle] = useState("");
+  const [budgetCategory, setBudgetCategory] = useState("");
+  const [budgetPlanned, setBudgetPlanned] = useState("");
+  const [budgetPaid, setBudgetPaid] = useState("");
+  const [budgetStatus, setBudgetStatus] = useState<BudgetStatus>("planned");
+  const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
   const done = tasks.filter((task) => task.done).length;
   const progress = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+  const plannedBudget = budgetItems.reduce((sum, item) => sum + item.plannedAmount, 0);
+  const paidBudget = budgetItems.reduce((sum, item) => sum + item.paidAmount, 0);
+  const availableBudget = Math.max(totalBudget - plannedBudget, 0);
+  const budgetProgress = totalBudget ? Math.min(Math.round((plannedBudget / totalBudget) * 100), 100) : 0;
   const filteredVendors = useMemo(() => vendors.filter((vendor) => `${vendor.name} ${vendor.meta}`.toLowerCase().includes(query.toLowerCase())), [query]);
 
   const toggleTask = async (id: string) => {
@@ -120,6 +137,85 @@ export default function Home() {
     }
   };
 
+  const resetBudgetForm = () => {
+    setBudgetTitle("");
+    setBudgetCategory("");
+    setBudgetPlanned("");
+    setBudgetPaid("");
+    setBudgetStatus("planned");
+    setEditingBudgetId(null);
+  };
+
+  const submitTotalBudget = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const value = Number(totalBudgetInput);
+    if (!weddingId || budgetSaving || !Number.isFinite(value) || value < 0) return;
+    setBudgetError("");
+    setBudgetSaving(true);
+    try {
+      const savedBudget = await saveTotalBudget(weddingId, value);
+      setTotalBudget(savedBudget);
+      setTotalBudgetInput(String(savedBudget));
+    } catch {
+      setBudgetError("Das Gesamtbudget konnte nicht gespeichert werden.");
+    } finally {
+      setBudgetSaving(false);
+    }
+  };
+
+  const submitBudgetItem = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const title = budgetTitle.trim();
+    const category = budgetCategory.trim();
+    const plannedAmount = Number(budgetPlanned);
+    const paidAmount = Number(budgetPaid || 0);
+    if (!weddingId || budgetSaving || !title || !category || !Number.isFinite(plannedAmount) || !Number.isFinite(paidAmount) || plannedAmount < 0 || paidAmount < 0) return;
+    setBudgetError("");
+    setBudgetSaving(true);
+    try {
+      if (editingBudgetId) {
+        const currentItem = budgetItems.find((item) => item.id === editingBudgetId);
+        if (!currentItem) return;
+        const savedItem = await updateBudgetItem({ ...currentItem, title, category, plannedAmount, paidAmount, status: budgetStatus });
+        setBudgetItems((current) => current.map((item) => item.id === editingBudgetId ? savedItem : item));
+      } else {
+        const savedItem = await createBudgetItem(weddingId, { title, category, plannedAmount, paidAmount, status: budgetStatus });
+        setBudgetItems((current) => [...current, savedItem]);
+      }
+      resetBudgetForm();
+    } catch {
+      setBudgetError("Der Budgetposten konnte nicht gespeichert werden.");
+    } finally {
+      setBudgetSaving(false);
+    }
+  };
+
+  const editBudgetItem = (item: BudgetItem) => {
+    setBudgetTitle(item.title);
+    setBudgetCategory(item.category);
+    setBudgetPlanned(String(item.plannedAmount));
+    setBudgetPaid(String(item.paidAmount));
+    setBudgetStatus(item.status);
+    setEditingBudgetId(item.id);
+  };
+
+  const removeBudgetItem = async (id: string) => {
+    if (budgetSaving) return;
+    const previousItems = budgetItems;
+    setBudgetError("");
+    setBudgetSaving(true);
+    setBudgetItems((current) => current.filter((item) => item.id !== id));
+    if (editingBudgetId === id) resetBudgetForm();
+    try {
+      await deleteBudgetItem(id);
+    } catch {
+      setBudgetItems(previousItems);
+      setBudgetError("Der Budgetposten konnte nicht gelöscht werden.");
+    } finally {
+      setBudgetSaving(false);
+    }
+  };
+
   useEffect(() => {
     const supabase = getSupabaseClient();
     let activeSubscription = true;
@@ -133,16 +229,21 @@ export default function Home() {
           return;
         }
         const workspaceId = await ensureWeddingWorkspace(data.user);
-        const cloudTasks = await fetchTasks(workspaceId);
+        const [cloudTasks, cloudBudget] = await Promise.all([fetchTasks(workspaceId), fetchBudget(workspaceId)]);
         if (!activeSubscription) return;
         setWeddingId(workspaceId);
         setTasks(cloudTasks);
         setTasksLoading(false);
+        setTotalBudget(cloudBudget.totalBudget);
+        setTotalBudgetInput(String(cloudBudget.totalBudget));
+        setBudgetItems(cloudBudget.items);
+        setBudgetLoading(false);
         setUserEmail(data.user.email ?? "Ouivio Konto");
         setAuthReady(true);
       } catch {
         if (activeSubscription) {
           setTasksLoading(false);
+          setBudgetLoading(false);
           setAuthError("Der persönliche Workspace konnte noch nicht geladen werden.");
         }
       }
@@ -191,7 +292,7 @@ export default function Home() {
             <div className="hero-side"><p>Noch</p><strong>379</strong><span>Tage bis zu eurem Ja</span><div><Ring value={progress}/><p><b>{done} von {tasks.length}</b><small>Meilensteine erledigt</small></p></div></div>
           </section>
           <section className="stats-grid">
-            <button className="card stat" onClick={() => setActive("Budget")}><span>Budget</span><strong>13.200 €</strong><small>von 25.000 € eingeplant</small><div className="progress"><i style={{width:"53%"}}/></div></button>
+            <button className="card stat" onClick={() => setActive("Budget")}><span>Budget</span><strong>{formatMoney(plannedBudget)}</strong><small>von {formatMoney(totalBudget)} eingeplant</small><div className="progress"><i style={{width:`${budgetProgress}%`}}/></div></button>
             <button className="card stat" onClick={() => setActive("Gäste")}><span>Gäste</span><strong>86</strong><small>62 Zusagen · 24 offen</small><div className="progress"><i style={{width:"72%"}}/></div></button>
             <button className="card stat" onClick={() => setActive("Anbieter")}><span>Anbieter</span><strong>3 Matches</strong><small>Für euch vorausgewählt</small><div className="faces"><i>📷</i><i>♫</i><i>✿</i></div></button>
           </section>
@@ -224,7 +325,41 @@ export default function Home() {
           </div>
         </Page>}
         {active === "Kalender" && <Page title="Kalender" intro="Alle wichtigen Termine, Deadlines und Gespräche in einer gemeinsamen Zeitleiste."><div className="timeline card">{[["18 SEP","Gespräch mit Luma Fotografie","11:00 · Video-Call"],["25 SEP","Location-Begehung","15:30 · Gut Sonnenhof"],["12 OKT","Menüverkostung","18:00 · Restaurant Lumière"]].map((item) => <div className="event" key={item[1]}><b>{item[0]}</b><span><strong>{item[1]}</strong><small>{item[2]}</small></span></div>)}</div></Page>}
-        {active === "Budget" && <Page title="Budget" intro="Klarheit über jede Ausgabe – geplant, reserviert und bezahlt."><div className="budget-grid"><article className="card budget-total"><small>Gesamtbudget</small><strong>25.000 €</strong><div className="progress"><i style={{width:"53%"}}/></div><p><span>13.200 € geplant</span><span>11.800 € verfügbar</span></p></article><article className="card">{[["Location","7.500 €","30%"],["Fotografie","2.400 €","10%"],["Musik","1.350 €","5%"],["Floristik","1.800 €","7%"]].map((item) => <div className="budget-row" key={item[0]}><span>{item[0]}</span><strong>{item[1]}</strong><small>{item[2]}</small></div>)}</article></div></Page>}
+        {active === "Budget" && <Page title="Budget" intro="Klarheit über jede Ausgabe – geplant, reserviert und bezahlt.">
+          <div className="budget-summary-grid">
+            <article className="card budget-total">
+              <small>Gesamtbudget</small><strong>{formatMoney(totalBudget)}</strong>
+              <div className="progress"><i style={{width:`${budgetProgress}%`}}/></div>
+              <p><span>{formatMoney(plannedBudget)} geplant</span><span>{formatMoney(availableBudget)} verfügbar</span></p>
+              <p><span>{formatMoney(paidBudget)} bezahlt</span><span>{budgetProgress}% eingeplant</span></p>
+            </article>
+            <form className="card budget-total-form" onSubmit={submitTotalBudget}>
+              <div className="card-head"><div><small>Budgetrahmen</small><h2>Gesamtbudget ändern</h2></div><span className="storage-badge">Synchronisiert</span></div>
+              <label>Betrag in Euro<input min="0" onChange={(event) => setTotalBudgetInput(event.target.value)} required step="0.01" type="number" value={totalBudgetInput}/></label>
+              <button className="primary-button" disabled={budgetSaving || budgetLoading} type="submit">{budgetSaving ? "Wird gespeichert …" : "Gesamtbudget speichern"}</button>
+            </form>
+          </div>
+          <div className="budget-manage-grid">
+            <form className="card budget-item-form" onSubmit={submitBudgetItem}>
+              <div className="card-head"><div><small>{editingBudgetId ? "Posten bearbeiten" : "Neuer Posten"}</small><h2>{editingBudgetId ? "Ausgabe aktualisieren" : "Ausgabe hinzufügen"}</h2></div></div>
+              <label>Bezeichnung<input maxLength={160} onChange={(event) => setBudgetTitle(event.target.value)} placeholder="Zum Beispiel: Hochzeitslocation" required value={budgetTitle}/></label>
+              <label>Kategorie<input maxLength={80} onChange={(event) => setBudgetCategory(event.target.value)} placeholder="Zum Beispiel: Location" required value={budgetCategory}/></label>
+              <div className="amount-fields"><label>Geplant (€)<input min="0" onChange={(event) => setBudgetPlanned(event.target.value)} required step="0.01" type="number" value={budgetPlanned}/></label><label>Bezahlt (€)<input min="0" onChange={(event) => setBudgetPaid(event.target.value)} step="0.01" type="number" value={budgetPaid}/></label></div>
+              <label>Status<select onChange={(event) => setBudgetStatus(event.target.value as BudgetStatus)} value={budgetStatus}><option value="planned">Geplant</option><option value="reserved">Reserviert</option><option value="paid">Bezahlt</option></select></label>
+              {budgetError && <p className="sync-error" role="alert">{budgetError}</p>}
+              <div className="form-actions"><button className="primary-button" disabled={budgetSaving || budgetLoading} type="submit">{budgetSaving ? "Wird gespeichert …" : editingBudgetId ? "Änderungen speichern" : "Posten hinzufügen"}</button>{editingBudgetId && <button className="secondary-button" disabled={budgetSaving} onClick={resetBudgetForm} type="button">Abbrechen</button>}</div>
+            </form>
+            <article className="card budget-items">
+              <div className="card-head"><div><small>{budgetItems.length} Budgetposten</small><h2>Eure Ausgaben</h2></div></div>
+              {budgetLoading ? <p className="empty-state">Budget wird geladen …</p> : budgetItems.length === 0 && <p className="empty-state">Noch keine Ausgaben. Legt links euren ersten Budgetposten an.</p>}
+              {budgetItems.map((item) => <div className="budget-item" key={item.id}>
+                <span><strong>{item.title}</strong><small>{item.category} · {budgetStatusLabel(item.status)}</small></span>
+                <span className="budget-amount"><strong>{formatMoney(item.plannedAmount)}</strong><small>{formatMoney(item.paidAmount)} bezahlt</small></span>
+                <div className="task-actions"><button disabled={budgetSaving} onClick={() => editBudgetItem(item)} type="button">Bearbeiten</button><button className="danger" disabled={budgetSaving} onClick={() => void removeBudgetItem(item.id)} type="button">Löschen</button></div>
+              </div>)}
+            </article>
+          </div>
+        </Page>}
         {active === "Anbieter" && <Page title="Anbieter" intro="Handverlesene Profis, passend zu eurem Stil, Termin und Budget."><div className="vendor-grid">{filteredVendors.map((vendor) => <article className="card vendor-card" key={vendor.name}><div className="vendor-visual">{vendor.icon}</div><span className="match">{vendor.match}% Match</span><h2>{vendor.name}</h2><p>{vendor.meta}</p><strong>{vendor.price}</strong><button>Details ansehen →</button></article>)}</div></Page>}
         {active === "Gäste" && <Page title="Gäste" intro="Zusagen, Gruppen und Wünsche eurer Gäste übersichtlich verwalten."><div className="card guest-table"><div className="table-head"><span>Name</span><span>Gruppe</span><span>Status</span></div>{guests.map((guest) => <div className="guest-row" key={guest.name}><strong>{guest.name}</strong><span>{guest.group}</span><em className={guest.status.toLowerCase()}>{guest.status}</em></div>)}</div></Page>}
       </section>
@@ -239,6 +374,14 @@ function Page({ title, intro, children }: { title: string; intro: string; childr
 function formatDueDate(value: string | null) {
   if (!value) return "";
   return `Fällig am ${new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(`${value}T12:00:00`))}`;
+}
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(value);
+}
+
+function budgetStatusLabel(status: BudgetStatus) {
+  return status === "paid" ? "Bezahlt" : status === "reserved" ? "Reserviert" : "Geplant";
 }
 
 function accountInitials(email: string) {
