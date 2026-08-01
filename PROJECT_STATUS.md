@@ -97,6 +97,7 @@ Priorität 3 – Qualität und Betrieb:
 - Laufende Kernentwicklung erfolgt auf `feat/ouivio-core-foundation`.
 - `AGENTS.md` und `PROJECT_STATUS.md` sind vor jeder Änderung zu lesen.
 - `PROJECT_STATUS.md` wird nach jedem größeren Arbeitsschritt aktualisiert.
+- Beauftragte Entwicklungsänderungen werden nach erfolgreicher Prüfung automatisch auf `feat/ouivio-core-foundation` committed und gepusht; diese Freigabe umfasst weder `main` noch Production-Deployments oder andere externe Änderungen.
 - Der derzeitige `localStorage`-Ansatz ist nur eine Prototyp-Lösung und keine langfristige Datenarchitektur.
 
 ## Letzte Prüfung
@@ -105,3 +106,4 @@ Priorität 3 – Qualität und Betrieb:
 - Projektstruktur, Commit-Historie, Startseiten-Routing und Dashboard-Code geprüft.
 - Lokale Vorschau aus demselben Branch zuvor erfolgreich unter `/index.html` mit HTTP 200 aufgerufen.
 - Diese Statusdatei beschreibt den belegbaren Stand; es wurden keine unfertigen Integrationen als produktiv markiert.
+- Dauerhaften automatischen Synchronisations-, Dokumentations-, Commit- und Push-Ablauf für künftige Entwicklungsänderungen festgehalten.
