@@ -160,10 +160,13 @@
       .hero-actions{display:grid;grid-template-columns:1fr;width:100%}
       .hero-actions .btn{width:100%;min-height:48px}
       .trust{display:grid;gap:9px}
-      .showcase{min-height:440px;border-radius:28px}
-      .showcase-content{padding:26px}
+      .hero-grid>.showcase{order:-1}
+      .showcase{min-height:360px;border-radius:28px}
+      .showcase-content{padding:22px 22px 116px}
       .showcase-logo{width:min(100%,280px)}
-      .floating-card{display:none}
+      .floating-card{display:block;left:22px;right:22px;top:auto;bottom:18px;width:auto;padding:14px 16px;border-radius:16px}
+      .floating-card .calendar{grid-template-columns:repeat(14,1fr);gap:3px;margin-top:8px}
+      .floating-card .calendar i{border-radius:4px}
       .metric-grid{grid-template-columns:1fr}
       .metric{padding:16px}
       .metric b{font-size:25px}
@@ -183,8 +186,9 @@
       .nav .btn{padding:10px 12px;font-size:12px}
       .hero{padding-top:42px}
       h1{font-size:clamp(36px,11.7vw,44px)}
-      .showcase{min-height:420px}
-      .showcase-content{padding:22px}
+      .showcase{min-height:340px}
+      .showcase-content{padding:18px 18px 108px}
+      .floating-card{left:18px;right:18px;bottom:15px;padding:12px 14px}
       .card,.pilot-panel,form{padding:22px}
     }
   </style>

@@ -29,6 +29,7 @@ Technische Grundlage:
 - Original-HTML-Startseite wird unter `/index.html` ausgeliefert.
 - Responsive Landingpage mit Navigation, Vorteilen, Ablauf, FAQ und Handlungsaufrufen.
 - Die öffentliche Startseite ist zusätzlich für 320–430 Pixel breite Smartphone-Hochformate optimiert: skalierende Überschriften, einspaltige Hauptaktionen, kompakter Showcase sowie überlauffreie Karten und Formulare.
+- Im mobilen Hero erscheint die Ouivio-Vorschau vor dem Text; die Verfügbarkeits-Kalenderkarte bleibt auch im Hochformat sichtbar und passt vollständig in die Bildschirmbreite.
 - Rote handschriftliche Ouivio-Wortmarke ist als eingebettetes Original-Asset vorhanden.
 - Link zum Dashboard unter `/dashboard` ist integriert.
 
