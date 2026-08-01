@@ -52,6 +52,7 @@ Technische Grundlage:
 - Die öffentliche Einladungsseite unter `/invite/[token]` ermöglicht Zu- und Absagen ohne Ouivio-Konto; geänderte Antworten werden im geöffneten Dashboard spätestens nach zehn Sekunden und beim Zurückkehren zum Tab automatisch geladen.
 - Gästeanzahl, Zusagen und offene Antworten werden aus den echten Supabase-Daten auf der Übersicht berechnet.
 - Rücklink vom Dashboard zur Startseite ist vorhanden.
+- Das Dashboard ist für schmale Smartphones optimiert: sichere untere Navigation, überlauffreier Kopfbereich, kompaktere Karten und gut erreichbare Sharing-Aktionen mit mindestens 44 Pixel hohen Touch-Zielen.
 - Supabase-E-Mail-/Passwort-Registrierung und Anmeldung stehen unter `/login` bereit.
 - Nicht angemeldete Dashboard-Aufrufe werden zur Anmeldung weitergeleitet; Sitzungen werden automatisch gespeichert und erneuert.
 - Nach der ersten bestätigten Anmeldung wird automatisch ein persönlicher Hochzeitsbereich mit Eigentümer-Mitgliedschaft angelegt.
@@ -158,6 +159,7 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Next.js-Production-Build einschließlich dynamischer Route `/invite/[token]` erfolgreich.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Ergänzung des vorbereiteten E-Mail-Versands erfolgreich.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Erweiterung um WhatsApp-, Instagram- und E-Mail-Teilen erfolgreich.
+- Mobile Dashboard-Styles für 320–430 Pixel breite Smartphones geprüft und überarbeitet; Navigation, Kopfbereich, Karten, Gästedaten und Sharing-Aktionen passen sich ohne horizontales Überlaufen an.
 - Lokale Browserprüfung der öffentlichen Einladungsroute erfolgreich: ungültiger Token zeigt den sicheren Nicht-gefunden-Zustand ohne Fehler-Overlay oder Konsolenfehler.
 - Transaktionaler RSVP-Ende-zu-Ende-Test erfolgreich: Testgast angelegt, Einladung als `anon` gelesen, Zusage als `anon` gespeichert, Antwortzeitpunkt geprüft und sämtliche Testdaten per `ROLLBACK` verworfen.
 - Abhängigkeitsprüfung ausgeführt: keine kritischen Hinweise; drei hohe transitive Hinweise der bestehenden Next.js-15-Lieferkette sind dokumentiert und nicht automatisch mit einem riskanten Major-Wechsel behoben worden.

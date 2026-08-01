@@ -90,4 +90,17 @@
   .amount-fields { grid-template-columns: 1fr; gap: 0; }
   .budget-item { grid-template-columns: minmax(0, 1fr) auto; }
   .budget-item .task-actions { grid-column: 1 / -1; }
+  .guest-card { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+  .guest-main { min-width: 0; }
+  .guest-main small { overflow-wrap: anywhere; }
+  .invite-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .invite-actions button, .invite-actions a { min-height: 44px; padding: 10px 8px; display: inline-flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; }
+  .form-actions > button { min-height: 44px; }
+}
+
+@media (max-width: 380px) {
+  .storage-badge { white-space: normal; text-align: center; }
+  .guest-card { grid-template-columns: 1fr; }
+  .rsvp-status { justify-self: start; }
+  .invite-actions { grid-template-columns: 1fr; }
 }
