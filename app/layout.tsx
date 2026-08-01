@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./task-management.css";
 
 export const metadata: Metadata = {
   title: "Ouivio – Eure Hochzeit. Ein Plan.",

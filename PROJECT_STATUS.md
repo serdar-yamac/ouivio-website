@@ -36,7 +36,8 @@ Technische Grundlage:
 - Bereiche Übersicht, Planung, Kalender, Budget, Anbieter und Gäste sind navigierbar.
 - Übersicht mit Countdown, Planungsfortschritt, Budget-, Gäste- und Anbieterkennzahlen.
 - Aufgaben können als erledigt/offen markiert werden.
-- Aufgabenstatus wird im Browser über `localStorage` unter `ouivio.tasks` gespeichert.
+- Aufgaben können angelegt, bearbeitet, mit einem Fälligkeitsdatum versehen und gelöscht werden.
+- Aufgabenstatus und Aufgabendaten werden im Browser über das versionierte Schema `ouivio.tasks.v2` gespeichert.
 - Kalender zeigt eine statische Terminzeitleiste.
 - Budget zeigt Gesamtbudget und statische Kategorien.
 - Anbieteransicht zeigt Matches; die globale Suche filtert die Anbieter lokal.
@@ -53,9 +54,9 @@ Technische Grundlage:
 ## Bekannte Einschränkungen
 
 - Das Dashboard verwendet überwiegend fest codierte Demo-Daten.
-- Es gibt noch kein Backend und keine Datenbankanbindung.
+- Das Supabase-Datenbankschema und eine typisierte REST-Datenzugriffsschicht sind vorbereitet, aber noch nicht mit einem konkreten Supabase-Projekt verbunden.
 - Es gibt keine Benutzerkonten, Anmeldung oder Autorisierung.
-- Aufgaben werden nur lokal im jeweiligen Browser gespeichert und nicht zwischen Geräten synchronisiert.
+- Aufgaben werden bis zur Aktivierung von Supabase Auth weiterhin nur lokal im jeweiligen Browser gespeichert und nicht zwischen Geräten synchronisiert.
 - Kalendertermine sind nicht editierbar und nicht mit Google Calendar oder Outlook verbunden.
 - Budgetposten können nicht angelegt, geändert oder bezahlt markiert werden.
 - Anbieterprofile, Detailansichten, Verfügbarkeit, Anfragen und Buchungen sind noch nicht produktiv umgesetzt.
@@ -68,14 +69,14 @@ Technische Grundlage:
 
 Priorität 1 – Produktgrundlage:
 
-1. Datenmodell für Paare, Hochzeiten, Aufgaben, Termine, Budgets, Gäste und Anbieter definieren.
-2. Backend und persistente Datenbank auswählen und anbinden.
-3. Authentifizierung, geschützte Dashboard-Routen und Mandantentrennung umsetzen.
+1. Supabase-Projekt anlegen, Migration ausführen und Umgebungsvariablen sicher hinterlegen.
+2. Authentifizierung, geschützte Dashboard-Routen und Mandantentrennung umsetzen.
+3. Dashboard-Aufgaben nach der Anmeldung über die vorbereitete REST-Schicht synchronisieren.
 4. Demo-Daten schrittweise durch echte, benutzerspezifische Daten ersetzen.
 
 Priorität 2 – Kernfunktionen:
 
-1. Aufgaben erstellen, bearbeiten, terminieren, zuweisen und löschen.
+1. Aufgaben nach Supabase-Aktivierung mehreren Mitgliedern zuweisen und geräteübergreifend synchronisieren.
 2. Kalender mit editierbaren Terminen sowie später Google-/Outlook-Synchronisation ausbauen.
 3. Budgetkategorien, Ausgaben, Zahlungsstatus und Belege verwalten.
 4. Gästeliste mit Import, Haushalten, RSVP, Ernährungswünschen und Einladungsstatus erweitern.
@@ -99,6 +100,8 @@ Priorität 3 – Qualität und Betrieb:
 - `PROJECT_STATUS.md` wird nach jedem größeren Arbeitsschritt aktualisiert.
 - Beauftragte Entwicklungsänderungen werden nach erfolgreicher Prüfung automatisch auf `feat/ouivio-core-foundation` committed und gepusht; diese Freigabe umfasst weder `main` noch Production-Deployments oder andere externe Änderungen.
 - Der derzeitige `localStorage`-Ansatz ist nur eine Prototyp-Lösung und keine langfristige Datenarchitektur.
+- Supabase/Postgres ist als persistente Datenbasis vorbereitet. Row-Level Security bleibt verpflichtend; anonyme öffentliche Schreibrechte werden nicht geöffnet.
+- Das Grundschema umfasst Hochzeiten, Mitglieder, Aufgaben, Termine, Budgetposten, Gäste, Anbieter und Favoriten.
 
 ## Letzte Prüfung
 
@@ -107,3 +110,5 @@ Priorität 3 – Qualität und Betrieb:
 - Lokale Vorschau aus demselben Branch zuvor erfolgreich unter `/index.html` mit HTTP 200 aufgerufen.
 - Diese Statusdatei beschreibt den belegbaren Stand; es wurden keine unfertigen Integrationen als produktiv markiert.
 - Dauerhaften automatischen Synchronisations-, Dokumentations-, Commit- und Push-Ablauf für künftige Entwicklungsänderungen festgehalten.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach Einführung der Supabase-Grundlage und Aufgabenverwaltung erfolgreich.
+- Browserprüfung erfolgreich: Dashboard lädt ohne Fehler-Overlay oder Konsolenfehler; Aufgabe konnte angelegt und wieder gelöscht werden.

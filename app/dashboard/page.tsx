@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import type { Task } from "../../lib/tasks";
 
 const sections = ["Übersicht", "Planung", "Kalender", "Budget", "Anbieter", "Gäste"] as const;
 type Section = (typeof sections)[number];
 
-const initialTasks = [
-  { title: "Fotograf auswählen", meta: "Empfohlen bis 20. September", done: false },
-  { title: "Save-the-Date versenden", meta: "86 Empfänger vorbereitet", done: false },
-  { title: "Location bestätigen", meta: "Gut Sonnenhof · Köln", done: true },
-  { title: "Menüverkostung terminieren", meta: "Bis 12. Oktober", done: false },
+const initialTasks: Task[] = [
+  { id: "photographer", title: "Fotograf auswählen", meta: "Empfohlen bis 20. September", done: false, dueDate: null, createdAt: "2026-08-01T00:00:00.000Z" },
+  { id: "save-the-date", title: "Save-the-Date versenden", meta: "86 Empfänger vorbereitet", done: false, dueDate: null, createdAt: "2026-08-01T00:01:00.000Z" },
+  { id: "location", title: "Location bestätigen", meta: "Gut Sonnenhof · Köln", done: true, dueDate: null, createdAt: "2026-08-01T00:02:00.000Z" },
+  { id: "tasting", title: "Menüverkostung terminieren", meta: "Bis 12. Oktober", done: false, dueDate: null, createdAt: "2026-08-01T00:03:00.000Z" },
 ];
 
 const vendors = [
@@ -35,26 +36,68 @@ export default function Home() {
   const [tasks, setTasks] = useState(initialTasks);
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState("");
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskMeta, setTaskMeta] = useState("");
+  const [taskDueDate, setTaskDueDate] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const done = tasks.filter((task) => task.done).length;
   const progress = Math.round((done / tasks.length) * 100);
   const filteredVendors = useMemo(() => vendors.filter((vendor) => `${vendor.name} ${vendor.meta}`.toLowerCase().includes(query.toLowerCase())), [query]);
 
-  const toggleTask = (title: string) => setTasks((current) => current.map((task) => task.title === title ? { ...task, done: !task.done } : task));
+  const toggleTask = (id: string) => setTasks((current) => current.map((task) => task.id === id ? { ...task, done: !task.done } : task));
+
+  const resetTaskForm = () => {
+    setTaskTitle("");
+    setTaskMeta("");
+    setTaskDueDate("");
+    setEditingTaskId(null);
+  };
+
+  const submitTask = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const title = taskTitle.trim();
+    if (!title) return;
+    if (editingTaskId) {
+      setTasks((current) => current.map((task) => task.id === editingTaskId ? { ...task, title, meta: taskMeta.trim(), dueDate: taskDueDate || null } : task));
+    } else {
+      setTasks((current) => [...current, {
+        id: window.crypto.randomUUID(),
+        title,
+        meta: taskMeta.trim(),
+        done: false,
+        dueDate: taskDueDate || null,
+        createdAt: new Date().toISOString(),
+      }]);
+    }
+    resetTaskForm();
+  };
+
+  const editTask = (task: Task) => {
+    setTaskTitle(task.title);
+    setTaskMeta(task.meta);
+    setTaskDueDate(task.dueDate ?? "");
+    setEditingTaskId(task.id);
+  };
+
+  const removeTask = (id: string) => {
+    setTasks((current) => current.filter((task) => task.id !== id));
+    if (editingTaskId === id) resetTaskForm();
+  };
 
   useEffect(() => {
-    const savedTasks = window.localStorage.getItem("ouivio.tasks");
+    const savedTasks = window.localStorage.getItem("ouivio.tasks.v2");
     if (savedTasks) {
       try {
         setTasks(JSON.parse(savedTasks));
       } catch {
-        window.localStorage.removeItem("ouivio.tasks");
+        window.localStorage.removeItem("ouivio.tasks.v2");
       }
     }
     setLoaded(true);
   }, []);
 
   useEffect(() => {
-    if (loaded) window.localStorage.setItem("ouivio.tasks", JSON.stringify(tasks));
+    if (loaded) window.localStorage.setItem("ouivio.tasks.v2", JSON.stringify(tasks));
   }, [loaded, tasks]);
 
   return (
@@ -85,12 +128,32 @@ export default function Home() {
             <button className="card stat" onClick={() => setActive("Anbieter")}><span>Anbieter</span><strong>3 Matches</strong><small>Für euch vorausgewählt</small><div className="faces"><i>📷</i><i>♫</i><i>✿</i></div></button>
           </section>
           <section className="detail-grid">
-            <article className="card"><div className="card-head"><div><small>Als Nächstes</small><h2>Eure Aufgaben</h2></div><button onClick={() => setActive("Planung")}>Alle ansehen →</button></div>{tasks.slice(0,3).map((task) => <button className="row task" onClick={() => toggleTask(task.title)} key={task.title}><span className={task.done ? "check done" : "check"}>{task.done ? "✓" : ""}</span><span><strong>{task.title}</strong><small>{task.meta}</small></span></button>)}</article>
+            <article className="card"><div className="card-head"><div><small>Als Nächstes</small><h2>Eure Aufgaben</h2></div><button onClick={() => setActive("Planung")}>Alle ansehen →</button></div>{tasks.slice(0,3).map((task) => <button className="row task" onClick={() => toggleTask(task.id)} key={task.id}><span className={task.done ? "check done" : "check"}>{task.done ? "✓" : ""}</span><span><strong>{task.title}</strong><small>{task.meta || formatDueDate(task.dueDate)}</small></span></button>)}</article>
             <article className="card"><div className="card-head"><div><small>Ouivio Auswahl</small><h2>Beste Matches</h2></div><button onClick={() => setActive("Anbieter")}>Entdecken →</button></div>{vendors.slice(0,2).map((vendor) => <div className="row vendor" key={vendor.name}><span className="vendor-icon">{vendor.icon}</span><span><strong>{vendor.name}</strong><small>{vendor.meta}</small></span><b>{vendor.match}%</b></div>)}</article>
           </section>
         </>}
 
-        {active === "Planung" && <Page title="Planung" intro="Euer roter Faden bis zum Hochzeitstag. Erledigt Aufgaben gemeinsam und behaltet jeden Meilenstein im Blick."><div className="card task-list">{tasks.map((task) => <button className="row task" onClick={() => toggleTask(task.title)} key={task.title}><span className={task.done ? "check done" : "check"}>{task.done ? "✓" : ""}</span><span><strong>{task.title}</strong><small>{task.meta}</small></span><em>{task.done ? "Erledigt" : "Offen"}</em></button>)}</div></Page>}
+        {active === "Planung" && <Page title="Planung" intro="Euer roter Faden bis zum Hochzeitstag. Erstellt Aufgaben, setzt Termine und behaltet jeden Meilenstein im Blick.">
+          <div className="planning-grid">
+            <form className="card task-form" onSubmit={submitTask}>
+              <div className="card-head"><div><small>{editingTaskId ? "Aufgabe bearbeiten" : "Neue Aufgabe"}</small><h2>{editingTaskId ? "Details aktualisieren" : "Was steht als Nächstes an?"}</h2></div><span className="storage-badge">Lokal gespeichert</span></div>
+              <label>Titel<input autoComplete="off" maxLength={160} onChange={(event) => setTaskTitle(event.target.value)} placeholder="Zum Beispiel: Einladungen gestalten" required value={taskTitle}/></label>
+              <label>Notiz<input autoComplete="off" maxLength={240} onChange={(event) => setTaskMeta(event.target.value)} placeholder="Optionaler Hinweis" value={taskMeta}/></label>
+              <label>Fällig am<input onChange={(event) => setTaskDueDate(event.target.value)} type="date" value={taskDueDate}/></label>
+              <div className="form-actions"><button className="primary-button" type="submit">{editingTaskId ? "Änderungen speichern" : "Aufgabe hinzufügen"}</button>{editingTaskId && <button className="secondary-button" onClick={resetTaskForm} type="button">Abbrechen</button>}</div>
+            </form>
+            <div className="card task-list">
+              <div className="card-head"><div><small>{done} von {tasks.length} erledigt</small><h2>Eure Aufgaben</h2></div></div>
+              {tasks.length === 0 && <p className="empty-state">Noch keine Aufgaben. Legt links euren ersten Schritt an.</p>}
+              {tasks.map((task) => <div className="row task-manage" key={task.id}>
+                <button aria-label={`${task.title} als ${task.done ? "offen" : "erledigt"} markieren`} className={task.done ? "check done" : "check"} onClick={() => toggleTask(task.id)} type="button">{task.done ? "✓" : ""}</button>
+                <span><strong>{task.title}</strong><small>{task.meta || formatDueDate(task.dueDate) || "Ohne weitere Details"}</small></span>
+                <em>{task.done ? "Erledigt" : "Offen"}</em>
+                <div className="task-actions"><button onClick={() => editTask(task)} type="button">Bearbeiten</button><button className="danger" onClick={() => removeTask(task.id)} type="button">Löschen</button></div>
+              </div>)}
+            </div>
+          </div>
+        </Page>}
         {active === "Kalender" && <Page title="Kalender" intro="Alle wichtigen Termine, Deadlines und Gespräche in einer gemeinsamen Zeitleiste."><div className="timeline card">{[["18 SEP","Gespräch mit Luma Fotografie","11:00 · Video-Call"],["25 SEP","Location-Begehung","15:30 · Gut Sonnenhof"],["12 OKT","Menüverkostung","18:00 · Restaurant Lumière"]].map((item) => <div className="event" key={item[1]}><b>{item[0]}</b><span><strong>{item[1]}</strong><small>{item[2]}</small></span></div>)}</div></Page>}
         {active === "Budget" && <Page title="Budget" intro="Klarheit über jede Ausgabe – geplant, reserviert und bezahlt."><div className="budget-grid"><article className="card budget-total"><small>Gesamtbudget</small><strong>25.000 €</strong><div className="progress"><i style={{width:"53%"}}/></div><p><span>13.200 € geplant</span><span>11.800 € verfügbar</span></p></article><article className="card">{[["Location","7.500 €","30%"],["Fotografie","2.400 €","10%"],["Musik","1.350 €","5%"],["Floristik","1.800 €","7%"]].map((item) => <div className="budget-row" key={item[0]}><span>{item[0]}</span><strong>{item[1]}</strong><small>{item[2]}</small></div>)}</article></div></Page>}
         {active === "Anbieter" && <Page title="Anbieter" intro="Handverlesene Profis, passend zu eurem Stil, Termin und Budget."><div className="vendor-grid">{filteredVendors.map((vendor) => <article className="card vendor-card" key={vendor.name}><div className="vendor-visual">{vendor.icon}</div><span className="match">{vendor.match}% Match</span><h2>{vendor.name}</h2><p>{vendor.meta}</p><strong>{vendor.price}</strong><button>Details ansehen →</button></article>)}</div></Page>}
@@ -102,4 +165,9 @@ export default function Home() {
 
 function Page({ title, intro, children }: { title: string; intro: string; children: React.ReactNode }) {
   return <section className="page"><p className="eyebrow red">Ouivio Workspace</p><h1>{title}</h1><p className="intro">{intro}</p>{children}</section>;
+}
+
+function formatDueDate(value: string | null) {
+  if (!value) return "";
+  return `Fällig am ${new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(`${value}T12:00:00`))}`;
 }
