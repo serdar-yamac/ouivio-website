@@ -46,7 +46,9 @@ Technische Grundlage:
 - Budgetübersicht und Dashboard-Kennzahl berechnen geplante, bezahlte und verfügbare Beträge aus den echten Benutzerdaten.
 - Anbieteransicht zeigt Matches; die globale Suche filtert die Anbieter lokal.
 - Gäste können mit Gruppe, E-Mail-Adresse, Ernährungswünschen und RSVP-Status angelegt, bearbeitet und gelöscht werden.
-- Jeder Gast erhält einen individuellen Einladungslink, der kopiert oder mit vorbereitetem Text über WhatsApp geteilt werden kann.
+- Jeder Gast erhält einen individuellen Einladungslink, der kopiert oder mit vorbereitetem Text über WhatsApp, Instagram oder E-Mail geteilt werden kann.
+- WhatsApp öffnet den vorbereiteten Einladungstext direkt. Für Instagram wird der Text samt Link kopiert und anschließend der Nachrichtenbereich geöffnet, da Instagram keine vorausgefüllten Direktnachrichten per Web-Link unterstützt.
+- Für Gäste mit hinterlegter E-Mail-Adresse öffnet ein zusätzlicher Versandknopf eine vollständig vorbereitete persönliche Einladungs-E-Mail im Standard-Mailprogramm.
 - Die öffentliche Einladungsseite unter `/invite/[token]` ermöglicht Zu- und Absagen ohne Ouivio-Konto; geänderte Antworten werden im geöffneten Dashboard spätestens nach zehn Sekunden und beim Zurückkehren zum Tab automatisch geladen.
 - Gästeanzahl, Zusagen und offene Antworten werden aus den echten Supabase-Daten auf der Übersicht berechnet.
 - Rücklink vom Dashboard zur Startseite ist vorhanden.
@@ -81,7 +83,7 @@ Technische Grundlage:
 - Kalendertermine sind nicht editierbar und nicht mit Google Calendar oder Outlook verbunden.
 - Anbieterprofile, Detailansichten, Verfügbarkeit, Anfragen und Buchungen sind noch nicht produktiv umgesetzt.
 - Einladungslinks verwenden vor dem Production-Rollout bewusst den stabilen Vercel-Feature-Branch-Alias; die endgültige Ouivio-Domain muss vor dem öffentlichen Start eingesetzt werden.
-- Gästelisten-Import, Haushalte, Begleitpersonen und automatischer E-Mail-Versand fehlen noch.
+- Gästelisten-Import, Haushalte, Begleitpersonen und serverseitiger automatischer Versand fehlen noch; persönliche Links können bereits über WhatsApp, Instagram oder das Standard-Mailprogramm geteilt werden.
 - Suche wirkt derzeit nur auf die lokale Anbieterliste.
 - Benachrichtigungen, Nachrichten und Mehrbenutzer-Zusammenarbeit fehlen.
 - Es gibt noch keine automatisierten Tests.
@@ -154,6 +156,8 @@ Priorität 3 – Qualität und Betrieb:
 - Öffentlicher Data-API-Test bestätigt: Einladungs-RPC antwortet auf einen ungültigen Token mit HTTP 200 und leerem Ergebnis, direkter anonymer Gästezugriff wird mit HTTP 401 abgewiesen.
 - Supabase Security Advisor nach der RSVP-Migration: 0 Fehler, 5 Warnungen. Vier Warnungen dokumentieren die bewusst öffentlich ausführbaren, tokenbegrenzten `SECURITY DEFINER`-RPCs; eine bestehende Warnung betrifft deaktivierten Schutz vor geleakten Passwörtern.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build einschließlich dynamischer Route `/invite/[token]` erfolgreich.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach Ergänzung des vorbereiteten E-Mail-Versands erfolgreich.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach Erweiterung um WhatsApp-, Instagram- und E-Mail-Teilen erfolgreich.
 - Lokale Browserprüfung der öffentlichen Einladungsroute erfolgreich: ungültiger Token zeigt den sicheren Nicht-gefunden-Zustand ohne Fehler-Overlay oder Konsolenfehler.
 - Transaktionaler RSVP-Ende-zu-Ende-Test erfolgreich: Testgast angelegt, Einladung als `anon` gelesen, Zusage als `anon` gespeichert, Antwortzeitpunkt geprüft und sämtliche Testdaten per `ROLLBACK` verworfen.
 - Abhängigkeitsprüfung ausgeführt: keine kritischen Hinweise; drei hohe transitive Hinweise der bestehenden Next.js-15-Lieferkette sind dokumentiert und nicht automatisch mit einem riskanten Major-Wechsel behoben worden.

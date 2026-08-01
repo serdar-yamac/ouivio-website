@@ -295,6 +295,17 @@ export default function Home() {
     }
   };
 
+  const shareViaInstagram = async (guest: Guest) => {
+    try {
+      await navigator.clipboard.writeText(invitationMessage(guest));
+      setCopiedGuestId(guest.id);
+      window.setTimeout(() => setCopiedGuestId(null), 2500);
+      window.open("https://www.instagram.com/direct/inbox/", "_blank", "noopener,noreferrer");
+    } catch {
+      setGuestError("Der Einladungstext konnte nicht für Instagram kopiert werden.");
+    }
+  };
+
   useEffect(() => {
     const supabase = getSupabaseClient();
     let activeSubscription = true;
@@ -486,7 +497,9 @@ export default function Home() {
                 <span className={`rsvp-status ${guest.status}`}>{rsvpStatusLabel(guest.status)}</span>
                 <div className="invite-actions">
                   <button disabled={guestSaving} onClick={() => void copyInvitationLink(guest)} type="button">{copiedGuestId === guest.id ? "Link kopiert ✓" : "Link kopieren"}</button>
-                  <a href={whatsAppInvitationUrl(guest)} rel="noreferrer" target="_blank">Per WhatsApp</a>
+                  <a href={whatsAppInvitationUrl(guest)} rel="noreferrer" target="_blank">WhatsApp</a>
+                  <button disabled={guestSaving} onClick={() => void shareViaInstagram(guest)} type="button">Instagram</button>
+                  {guest.email && <a href={emailInvitationUrl(guest)}>E-Mail</a>}
                   <button disabled={guestSaving} onClick={() => editGuest(guest)} type="button">Bearbeiten</button>
                   <button className="danger" disabled={guestSaving} onClick={() => void removeGuest(guest.id)} type="button">Löschen</button>
                 </div>
@@ -525,8 +538,16 @@ function invitationUrl(token: string) {
 }
 
 function whatsAppInvitationUrl(guest: Guest) {
-  const message = `Hallo ${guest.name}, hier ist deine persönliche Einladung zu unserer Hochzeit: ${invitationUrl(guest.inviteToken)}`;
-  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/?text=${encodeURIComponent(invitationMessage(guest))}`;
+}
+
+function emailInvitationUrl(guest: Guest) {
+  const subject = "Deine persönliche Hochzeitseinladung";
+  return `mailto:${encodeURIComponent(guest.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(invitationMessage(guest))}`;
+}
+
+function invitationMessage(guest: Guest) {
+  return `Hallo ${guest.name},\n\nwir möchten diesen besonderen Tag gerne mit dir feiern. Über deinen persönlichen Einladungslink kannst du uns direkt zu- oder absagen:\n\n${invitationUrl(guest.inviteToken)}\n\nWir freuen uns auf dich!`;
 }
 
 function accountInitials(email: string) {
