@@ -19,7 +19,9 @@ Diese Datei und `PROJECT_STATUS.md` müssen vor jeder Änderung am Projekt volls
 - Demo-Daten klar von persistenten oder produktiven Daten unterscheiden.
 - Neue Funktionen responsiv und barrierearm umsetzen und bestehende Dashboard-Navigation nicht unbeabsichtigt brechen.
 - Nach Änderungen mindestens die passenden Prüfungen ausführen. Für Codeänderungen sind in der Regel `npm run typecheck` und `npm run build` erforderlich; relevante Nutzerabläufe zusätzlich in der lokalen Vorschau prüfen.
-- GitHub-Pushes nur nach ausdrücklicher Freigabe durchführen. Commits klein, nachvollziehbar und auf die beauftragten Dateien beschränken.
+- Jede vom Benutzer beauftragte Ouivio-Entwicklungsänderung umfasst automatisch den vollständigen GitHub-Ablauf: neuesten Stand dieses Branches laden, Regeln lesen, Änderungen umsetzen, `PROJECT_STATUS.md` aktualisieren, angemessen prüfen, nur die zugehörigen Dateien stagen, committen und auf `feat/ouivio-core-foundation` pushen. Diese dauerhafte Freigabe gilt nicht für andere Branches, Repositories, Pull Requests, Merges nach `main`, Production-Deployments oder sonstige externe Änderungen.
+- Commits klein, nachvollziehbar und auf die beauftragten Dateien beschränken.
+- Bei Konflikten, fehlender Authentifizierung, unerwarteten fremden Änderungen, fehlgeschlagenen Prüfungen oder sicherheitsrelevanten Entscheidungen nicht eigenmächtig fortfahren, sondern den Benutzer informieren und erforderlichenfalls um Freigabe bitten.
 
 ## Projektdokumentation
 
