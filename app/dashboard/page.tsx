@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createBudgetItem, deleteBudgetItem, fetchBudget, saveTotalBudget, updateBudgetItem, type BudgetItem, type BudgetStatus } from "../../lib/budget";
+import { createGuest, deleteGuest, fetchGuests, updateGuest, type Guest, type RsvpStatus } from "../../lib/guests";
 import { getSupabaseClient } from "../../lib/supabase";
 import { createTask, deleteTask, fetchTasks, updateTask, type Task } from "../../lib/tasks";
 import { ensureWeddingWorkspace } from "../../lib/workspace";
@@ -17,12 +18,7 @@ const vendors = [
   { icon: "✿", name: "Maison Fleur", meta: "Floristik · Bonn", match: 91, price: "ab 1.800 €" },
 ];
 
-const guests = [
-  { name: "Anna Keller", group: "Familie", status: "Zugesagt" },
-  { name: "Mehmet Yılmaz", group: "Freunde", status: "Offen" },
-  { name: "Laura & Tim", group: "Freunde", status: "Zugesagt" },
-  { name: "Julia Sommer", group: "Arbeit", status: "Abgesagt" },
-];
+const publicAppUrl = "https://ouivio-website-git-feat-ouivio-core-foundation-ouivio.vercel.app";
 
 function Ring({ value }: { value: number }) {
   return <div className="ring" style={{ "--value": `${value * 3.6}deg` } as React.CSSProperties}><span>{value}%</span></div>;
@@ -56,12 +52,26 @@ export default function Home() {
   const [budgetPaid, setBudgetPaid] = useState("");
   const [budgetStatus, setBudgetStatus] = useState<BudgetStatus>("planned");
   const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [guestsLoading, setGuestsLoading] = useState(true);
+  const [guestSaving, setGuestSaving] = useState(false);
+  const [guestError, setGuestError] = useState("");
+  const [guestName, setGuestName] = useState("");
+  const [guestGroup, setGuestGroup] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestDietaryNotes, setGuestDietaryNotes] = useState("");
+  const [guestStatus, setGuestStatus] = useState<RsvpStatus>("open");
+  const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
+  const [copiedGuestId, setCopiedGuestId] = useState<string | null>(null);
   const done = tasks.filter((task) => task.done).length;
   const progress = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
   const plannedBudget = budgetItems.reduce((sum, item) => sum + item.plannedAmount, 0);
   const paidBudget = budgetItems.reduce((sum, item) => sum + item.paidAmount, 0);
   const availableBudget = Math.max(totalBudget - plannedBudget, 0);
   const budgetProgress = totalBudget ? Math.min(Math.round((plannedBudget / totalBudget) * 100), 100) : 0;
+  const acceptedGuests = guests.filter((guest) => guest.status === "accepted").length;
+  const openGuests = guests.filter((guest) => guest.status === "open").length;
+  const guestProgress = guests.length ? Math.round((acceptedGuests / guests.length) * 100) : 0;
   const filteredVendors = useMemo(() => vendors.filter((vendor) => `${vendor.name} ${vendor.meta}`.toLowerCase().includes(query.toLowerCase())), [query]);
 
   const toggleTask = async (id: string) => {
@@ -216,6 +226,75 @@ export default function Home() {
     }
   };
 
+  const resetGuestForm = () => {
+    setGuestName("");
+    setGuestGroup("");
+    setGuestEmail("");
+    setGuestDietaryNotes("");
+    setGuestStatus("open");
+    setEditingGuestId(null);
+  };
+
+  const submitGuest = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const name = guestName.trim();
+    if (!weddingId || guestSaving || !name) return;
+    setGuestError("");
+    setGuestSaving(true);
+    try {
+      if (editingGuestId) {
+        const currentGuest = guests.find((guest) => guest.id === editingGuestId);
+        if (!currentGuest) return;
+        const savedGuest = await updateGuest({ ...currentGuest, name, group: guestGroup.trim(), email: guestEmail.trim(), dietaryNotes: guestDietaryNotes.trim(), status: guestStatus });
+        setGuests((current) => current.map((guest) => guest.id === editingGuestId ? savedGuest : guest));
+      } else {
+        const savedGuest = await createGuest(weddingId, { name, group: guestGroup.trim(), email: guestEmail.trim(), dietaryNotes: guestDietaryNotes.trim() });
+        setGuests((current) => [...current, savedGuest]);
+      }
+      resetGuestForm();
+    } catch {
+      setGuestError("Der Gast konnte nicht gespeichert werden.");
+    } finally {
+      setGuestSaving(false);
+    }
+  };
+
+  const editGuest = (guest: Guest) => {
+    setGuestName(guest.name);
+    setGuestGroup(guest.group);
+    setGuestEmail(guest.email);
+    setGuestDietaryNotes(guest.dietaryNotes);
+    setGuestStatus(guest.status);
+    setEditingGuestId(guest.id);
+  };
+
+  const removeGuest = async (id: string) => {
+    if (guestSaving) return;
+    const previousGuests = guests;
+    setGuestError("");
+    setGuestSaving(true);
+    setGuests((current) => current.filter((guest) => guest.id !== id));
+    if (editingGuestId === id) resetGuestForm();
+    try {
+      await deleteGuest(id);
+    } catch {
+      setGuests(previousGuests);
+      setGuestError("Der Gast konnte nicht gelöscht werden.");
+    } finally {
+      setGuestSaving(false);
+    }
+  };
+
+  const copyInvitationLink = async (guest: Guest) => {
+    try {
+      await navigator.clipboard.writeText(invitationUrl(guest.inviteToken));
+      setCopiedGuestId(guest.id);
+      window.setTimeout(() => setCopiedGuestId(null), 2500);
+    } catch {
+      setGuestError("Der Link konnte nicht kopiert werden.");
+    }
+  };
+
   useEffect(() => {
     const supabase = getSupabaseClient();
     let activeSubscription = true;
@@ -229,7 +308,7 @@ export default function Home() {
           return;
         }
         const workspaceId = await ensureWeddingWorkspace(data.user);
-        const [cloudTasks, cloudBudget] = await Promise.all([fetchTasks(workspaceId), fetchBudget(workspaceId)]);
+        const [cloudTasks, cloudBudget, cloudGuests] = await Promise.all([fetchTasks(workspaceId), fetchBudget(workspaceId), fetchGuests(workspaceId)]);
         if (!activeSubscription) return;
         setWeddingId(workspaceId);
         setTasks(cloudTasks);
@@ -238,12 +317,15 @@ export default function Home() {
         setTotalBudgetInput(String(cloudBudget.totalBudget));
         setBudgetItems(cloudBudget.items);
         setBudgetLoading(false);
+        setGuests(cloudGuests);
+        setGuestsLoading(false);
         setUserEmail(data.user.email ?? "Ouivio Konto");
         setAuthReady(true);
       } catch {
         if (activeSubscription) {
           setTasksLoading(false);
           setBudgetLoading(false);
+          setGuestsLoading(false);
           setAuthError("Der persönliche Workspace konnte noch nicht geladen werden.");
         }
       }
@@ -258,6 +340,29 @@ export default function Home() {
       listener.subscription.unsubscribe();
     };
   }, [router]);
+
+  useEffect(() => {
+    if (!weddingId) return;
+    let activeSubscription = true;
+    const refreshGuests = async () => {
+      try {
+        const cloudGuests = await fetchGuests(weddingId);
+        if (activeSubscription) setGuests(cloudGuests);
+      } catch {
+        if (activeSubscription) setGuestError("Neue Rückmeldungen konnten gerade nicht geladen werden.");
+      }
+    };
+    const interval = window.setInterval(() => void refreshGuests(), 10000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshGuests();
+    };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      activeSubscription = false;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [weddingId]);
 
   const signOut = async () => {
     await getSupabaseClient().auth.signOut();
@@ -293,7 +398,7 @@ export default function Home() {
           </section>
           <section className="stats-grid">
             <button className="card stat" onClick={() => setActive("Budget")}><span>Budget</span><strong>{formatMoney(plannedBudget)}</strong><small>von {formatMoney(totalBudget)} eingeplant</small><div className="progress"><i style={{width:`${budgetProgress}%`}}/></div></button>
-            <button className="card stat" onClick={() => setActive("Gäste")}><span>Gäste</span><strong>86</strong><small>62 Zusagen · 24 offen</small><div className="progress"><i style={{width:"72%"}}/></div></button>
+            <button className="card stat" onClick={() => setActive("Gäste")}><span>Gäste</span><strong>{guests.length}</strong><small>{acceptedGuests} Zusagen · {openGuests} offen</small><div className="progress"><i style={{width:`${guestProgress}%`}}/></div></button>
             <button className="card stat" onClick={() => setActive("Anbieter")}><span>Anbieter</span><strong>3 Matches</strong><small>Für euch vorausgewählt</small><div className="faces"><i>📷</i><i>♫</i><i>✿</i></div></button>
           </section>
           <section className="detail-grid">
@@ -361,7 +466,34 @@ export default function Home() {
           </div>
         </Page>}
         {active === "Anbieter" && <Page title="Anbieter" intro="Handverlesene Profis, passend zu eurem Stil, Termin und Budget."><div className="vendor-grid">{filteredVendors.map((vendor) => <article className="card vendor-card" key={vendor.name}><div className="vendor-visual">{vendor.icon}</div><span className="match">{vendor.match}% Match</span><h2>{vendor.name}</h2><p>{vendor.meta}</p><strong>{vendor.price}</strong><button>Details ansehen →</button></article>)}</div></Page>}
-        {active === "Gäste" && <Page title="Gäste" intro="Zusagen, Gruppen und Wünsche eurer Gäste übersichtlich verwalten."><div className="card guest-table"><div className="table-head"><span>Name</span><span>Gruppe</span><span>Status</span></div>{guests.map((guest) => <div className="guest-row" key={guest.name}><strong>{guest.name}</strong><span>{guest.group}</span><em className={guest.status.toLowerCase()}>{guest.status}</em></div>)}</div></Page>}
+        {active === "Gäste" && <Page title="Gäste" intro="Gäste verwalten, persönliche Einladungslinks teilen und Antworten automatisch empfangen.">
+          <div className="guest-manage-grid">
+            <form className="card guest-form" onSubmit={submitGuest}>
+              <div className="card-head"><div><small>{editingGuestId ? "Gast bearbeiten" : "Neuer Gast"}</small><h2>{editingGuestId ? "Details aktualisieren" : "Person hinzufügen"}</h2></div><span className="storage-badge">Synchronisiert</span></div>
+              <label>Name<input maxLength={160} onChange={(event) => setGuestName(event.target.value)} placeholder="Vor- und Nachname" required value={guestName}/></label>
+              <label>Gruppe<input maxLength={80} onChange={(event) => setGuestGroup(event.target.value)} placeholder="Familie, Freunde, Arbeit …" value={guestGroup}/></label>
+              <label>E-Mail-Adresse<input onChange={(event) => setGuestEmail(event.target.value)} placeholder="Optional" type="email" value={guestEmail}/></label>
+              <label>Ernährungswünsche<input maxLength={240} onChange={(event) => setGuestDietaryNotes(event.target.value)} placeholder="Optional" value={guestDietaryNotes}/></label>
+              {editingGuestId && <label>Status<select onChange={(event) => setGuestStatus(event.target.value as RsvpStatus)} value={guestStatus}><option value="open">Offen</option><option value="accepted">Zugesagt</option><option value="declined">Abgesagt</option></select></label>}
+              {guestError && <p className="sync-error" role="alert">{guestError}</p>}
+              <div className="form-actions"><button className="primary-button" disabled={guestSaving || guestsLoading} type="submit">{guestSaving ? "Wird gespeichert …" : editingGuestId ? "Änderungen speichern" : "Gast hinzufügen"}</button>{editingGuestId && <button className="secondary-button" disabled={guestSaving} onClick={resetGuestForm} type="button">Abbrechen</button>}</div>
+            </form>
+            <section className="card guest-list">
+              <div className="card-head"><div><small>{acceptedGuests} von {guests.length} zugesagt</small><h2>Eure Gästeliste</h2></div></div>
+              {guestsLoading ? <p className="empty-state">Gäste werden geladen …</p> : guests.length === 0 && <p className="empty-state">Noch keine Gäste. Fügt links die erste Person hinzu.</p>}
+              {guests.map((guest) => <article className="guest-card" key={guest.id}>
+                <div className="guest-main"><strong>{guest.name}</strong><small>{guest.group || "Ohne Gruppe"}{guest.email ? ` · ${guest.email}` : ""}</small>{guest.dietaryNotes && <small>🍽 {guest.dietaryNotes}</small>}</div>
+                <span className={`rsvp-status ${guest.status}`}>{rsvpStatusLabel(guest.status)}</span>
+                <div className="invite-actions">
+                  <button disabled={guestSaving} onClick={() => void copyInvitationLink(guest)} type="button">{copiedGuestId === guest.id ? "Link kopiert ✓" : "Link kopieren"}</button>
+                  <a href={whatsAppInvitationUrl(guest)} rel="noreferrer" target="_blank">Per WhatsApp</a>
+                  <button disabled={guestSaving} onClick={() => editGuest(guest)} type="button">Bearbeiten</button>
+                  <button className="danger" disabled={guestSaving} onClick={() => void removeGuest(guest.id)} type="button">Löschen</button>
+                </div>
+              </article>)}
+            </section>
+          </div>
+        </Page>}
       </section>
     </main>
   );
@@ -382,6 +514,19 @@ function formatMoney(value: number) {
 
 function budgetStatusLabel(status: BudgetStatus) {
   return status === "paid" ? "Bezahlt" : status === "reserved" ? "Reserviert" : "Geplant";
+}
+
+function rsvpStatusLabel(status: RsvpStatus) {
+  return status === "accepted" ? "Zugesagt" : status === "declined" ? "Abgesagt" : "Offen";
+}
+
+function invitationUrl(token: string) {
+  return `${publicAppUrl}/invite/${token}`;
+}
+
+function whatsAppInvitationUrl(guest: Guest) {
+  const message = `Hallo ${guest.name}, hier ist deine persönliche Einladung zu unserer Hochzeit: ${invitationUrl(guest.inviteToken)}`;
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
 
 function accountInitials(email: string) {

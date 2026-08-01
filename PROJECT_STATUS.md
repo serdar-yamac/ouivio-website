@@ -45,7 +45,10 @@ Technische Grundlage:
 - Budgetposten können mit Kategorie, geplantem und bezahltem Betrag sowie Status angelegt, bearbeitet und gelöscht werden.
 - Budgetübersicht und Dashboard-Kennzahl berechnen geplante, bezahlte und verfügbare Beträge aus den echten Benutzerdaten.
 - Anbieteransicht zeigt Matches; die globale Suche filtert die Anbieter lokal.
-- Gästeliste zeigt Namen, Gruppen und RSVP-Status.
+- Gäste können mit Gruppe, E-Mail-Adresse, Ernährungswünschen und RSVP-Status angelegt, bearbeitet und gelöscht werden.
+- Jeder Gast erhält einen individuellen Einladungslink, der kopiert oder mit vorbereitetem Text über WhatsApp geteilt werden kann.
+- Die öffentliche Einladungsseite unter `/invite/[token]` ermöglicht Zu- und Absagen ohne Ouivio-Konto; geänderte Antworten werden im geöffneten Dashboard spätestens nach zehn Sekunden und beim Zurückkehren zum Tab automatisch geladen.
+- Gästeanzahl, Zusagen und offene Antworten werden aus den echten Supabase-Daten auf der Übersicht berechnet.
 - Rücklink vom Dashboard zur Startseite ist vorhanden.
 - Supabase-E-Mail-/Passwort-Registrierung und Anmeldung stehen unter `/login` bereit.
 - Nicht angemeldete Dashboard-Aufrufe werden zur Anmeldung weitergeleitet; Sitzungen werden automatisch gespeichert und erneuert.
@@ -77,7 +80,8 @@ Technische Grundlage:
 - Frühere Browser-Demoaufgaben aus `ouivio.tasks.v2` werden bewusst nicht automatisch in einen echten Benutzerbereich übernommen.
 - Kalendertermine sind nicht editierbar und nicht mit Google Calendar oder Outlook verbunden.
 - Anbieterprofile, Detailansichten, Verfügbarkeit, Anfragen und Buchungen sind noch nicht produktiv umgesetzt.
-- Gästedaten können nicht hinzugefügt, importiert, bearbeitet oder eingeladen werden.
+- Einladungslinks verwenden vor dem Production-Rollout bewusst den stabilen Vercel-Feature-Branch-Alias; die endgültige Ouivio-Domain muss vor dem öffentlichen Start eingesetzt werden.
+- Gästelisten-Import, Haushalte, Begleitpersonen und automatischer E-Mail-Versand fehlen noch.
 - Suche wirkt derzeit nur auf die lokale Anbieterliste.
 - Benachrichtigungen, Nachrichten und Mehrbenutzer-Zusammenarbeit fehlen.
 - Es gibt noch keine automatisierten Tests.
@@ -95,7 +99,7 @@ Priorität 2 – Kernfunktionen:
 1. Aufgaben mehreren Mitgliedern zuweisen und die gemeinsame Bearbeitung ausbauen.
 2. Kalender mit editierbaren Terminen sowie später Google-/Outlook-Synchronisation ausbauen.
 3. Budget um Beleg-Uploads, Fälligkeiten und detaillierte Kategorienauswertungen erweitern.
-4. Gästeliste mit Import, Haushalten, RSVP, Ernährungswünschen und Einladungsstatus erweitern.
+4. Gästeliste um Import, Haushalte, Begleitpersonen und E-Mail-Einladungsversand erweitern.
 5. Anbieterprofile, Filter, Favoriten, Anfragen, Verfügbarkeit und Buchungsablauf entwickeln.
 
 Priorität 3 – Qualität und Betrieb:
@@ -118,6 +122,8 @@ Priorität 3 – Qualität und Betrieb:
 - Supabase/Postgres ist die persistente Datenbasis. Row-Level Security bleibt verpflichtend; anonyme öffentliche Schreibrechte werden nicht geöffnet.
 - Vorhandene lokale Demoaufgaben werden nicht automatisch in neue Benutzerkonten kopiert, damit echte Bereiche sauber beginnen.
 - Gesamtbudget und Budgetposten werden wie Aufgaben direkt im persönlichen Supabase-Bereich gespeichert und durch die vorhandene Mitgliedschafts-RLS geschützt.
+- Öffentliche RSVP-Links sind zufällige UUID-Bearer-Links. Anonyme Rollen besitzen keine direkten Rechte auf `guests`; zwei bewusst eng begrenzte `SECURITY DEFINER`-RPCs lesen nur minimale Einladungsdaten beziehungsweise ändern ausschließlich auf `accepted` oder `declined`.
+- Ein ungültiger Einladungstoken liefert keine Daten. Einladungslinks sind vertraulich zu behandeln und werden beim Löschen des Gastes automatisch ungültig.
 - Das Grundschema umfasst Hochzeiten, Mitglieder, Aufgaben, Termine, Budgetposten, Gäste, Anbieter und Favoriten.
 - Interne RLS-Hilfsfunktionen liegen im nicht exponierten `private`-Schema; Funktions- und Tabellenrechte sind explizit auf authentifizierte Nutzer begrenzt.
 - Supabase Auth verwaltet Browser-Sitzungen; Autorisierung erfolgt ausschließlich über Datenbank-RLS und nicht über bearbeitbare Nutzer-Metadaten.
@@ -143,4 +149,11 @@ Priorität 3 – Qualität und Betrieb:
 - Integrität der geschützten Startseiten erneut per SHA-256 bestätigt; beide Dateien entsprechen unverändert dem festgelegten Hash.
 - TypeScript-Prüfung nach Einführung der editierbaren Supabase-Budgetverwaltung erfolgreich.
 - Optimierter Next.js-Production-Build und lokale Browserprüfung nach der Budgetanbindung erfolgreich; der geschützte Dashboard-Aufruf leitet ohne Sitzung fehlerfrei zur Anmeldung.
+- Migration `20260801114314_guest_rsvp_links.sql` im Supabase-Projekt ausgeführt: Token-Spalte, eindeutiger Index, Antwortzeitpunkt und zwei RSVP-RPCs sind aktiv.
+- Sicherheitsprüfung bestätigt: `anon` kann `guests` weder lesen noch ändern, darf nur die zwei vorgesehenen RPCs ausführen; ungültige Tokens liefern 0 Datensätze.
+- Öffentlicher Data-API-Test bestätigt: Einladungs-RPC antwortet auf einen ungültigen Token mit HTTP 200 und leerem Ergebnis, direkter anonymer Gästezugriff wird mit HTTP 401 abgewiesen.
+- Supabase Security Advisor nach der RSVP-Migration: 0 Fehler, 5 Warnungen. Vier Warnungen dokumentieren die bewusst öffentlich ausführbaren, tokenbegrenzten `SECURITY DEFINER`-RPCs; eine bestehende Warnung betrifft deaktivierten Schutz vor geleakten Passwörtern.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build einschließlich dynamischer Route `/invite/[token]` erfolgreich.
+- Lokale Browserprüfung der öffentlichen Einladungsroute erfolgreich: ungültiger Token zeigt den sicheren Nicht-gefunden-Zustand ohne Fehler-Overlay oder Konsolenfehler.
+- Transaktionaler RSVP-Ende-zu-Ende-Test erfolgreich: Testgast angelegt, Einladung als `anon` gelesen, Zusage als `anon` gespeichert, Antwortzeitpunkt geprüft und sämtliche Testdaten per `ROLLBACK` verworfen.
 - Abhängigkeitsprüfung ausgeführt: keine kritischen Hinweise; drei hohe transitive Hinweise der bestehenden Next.js-15-Lieferkette sind dokumentiert und nicht automatisch mit einem riskanten Major-Wechsel behoben worden.

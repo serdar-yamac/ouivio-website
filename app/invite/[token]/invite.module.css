@@ -1,0 +1,23 @@
+.page, .state { min-height: 100vh; background: radial-gradient(circle at top, #fff 0, #f7f4f1 58%); display: grid; place-items: center; padding: 28px; }
+.card { width: min(680px, 100%); background: #fff; border: 1px solid #e9e2dd; border-radius: 32px; padding: clamp(30px, 7vw, 66px); box-shadow: 0 28px 80px rgba(46,27,21,.1); text-align: center; }
+.logo { display: inline-block; color: #171414; font: 700 italic 34px Georgia, serif; text-decoration: none; margin-bottom: 45px; }
+.logo span, .kicker { color: #df1632; }
+.kicker { font-size: 11px; font-weight: 850; letter-spacing: .17em; text-transform: uppercase; }
+.card h1 { font-size: clamp(38px, 7vw, 62px); line-height: 1; letter-spacing: -.055em; margin: 15px 0 24px; }
+.message { color: #766e6a; font-size: 17px; line-height: 1.7; }
+.message strong { color: #171414; }
+.details { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 30px 0; }
+.details div { background: #f7f4f1; border-radius: 16px; padding: 17px; }
+.details dt { color: #766e6a; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
+.details dd { margin: 7px 0 0; font-weight: 800; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 32px; }
+.actions button, .confirmation button, .state a { border: 0; border-radius: 999px; padding: 14px 18px; background: #df1632; color: #fff; font-weight: 800; cursor: pointer; text-decoration: none; }
+.actions .decline, .confirmation button { background: #fff; color: #171414; border: 1px solid #e9e2dd; }
+.actions button:disabled, .confirmation button:disabled { cursor: wait; opacity: .6; }
+.confirmation { margin-top: 32px; padding: 22px; background: #e6f5ed; color: #217a50; border-radius: 18px; }
+.confirmation p { color: #4c6d5d; }
+.error { color: #df1632; margin-top: 18px; }
+.state { text-align: center; align-content: center; gap: 12px; }
+.state span { color: #df1632; font: 700 italic 42px Georgia, serif; }
+.state p { color: #766e6a; }
+@media (max-width: 560px) { .details, .actions { grid-template-columns: 1fr; } .page { padding: 14px; } .card { border-radius: 24px; } }
