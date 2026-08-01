@@ -28,6 +28,7 @@ Technische Grundlage:
 
 - Original-HTML-Startseite wird unter `/index.html` ausgeliefert.
 - Responsive Landingpage mit Navigation, Vorteilen, Ablauf, FAQ und Handlungsaufrufen.
+- Die öffentliche Startseite ist zusätzlich für 320–430 Pixel breite Smartphone-Hochformate optimiert: skalierende Überschriften, einspaltige Hauptaktionen, kompakter Showcase sowie überlauffreie Karten und Formulare.
 - Rote handschriftliche Ouivio-Wortmarke ist als eingebettetes Original-Asset vorhanden.
 - Link zum Dashboard unter `/dashboard` ist integriert.
 
@@ -116,6 +117,7 @@ Priorität 3 – Qualität und Betrieb:
 ## Wichtige Entscheidungen
 
 - Die Original-HTML-Startseite bleibt die verbindliche öffentliche Designreferenz.
+- Mobile Anpassungen an der Startseite beschränken sich auf responsive CSS; Wortmarke, Inhalte, Farben und Desktopgestaltung bleiben unverändert.
 - Die rote handschriftliche Ouivio-Wortmarke ist unveränderlich.
 - Neue Funktionen entstehen im bestehenden Dashboard; Startseite und Dashboard bleiben technisch und gestalterisch getrennt.
 - Laufende Kernentwicklung erfolgt auf `feat/ouivio-core-foundation`.
@@ -159,6 +161,7 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Next.js-Production-Build einschließlich dynamischer Route `/invite/[token]` erfolgreich.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Ergänzung des vorbereiteten E-Mail-Versands erfolgreich.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Erweiterung um WhatsApp-, Instagram- und E-Mail-Teilen erfolgreich.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach der Hochformat-Optimierung der öffentlichen Startseite erfolgreich; `public/index.html` und `index.html` sind weiterhin bytegleich.
 - Mobile Dashboard-Styles für 320–430 Pixel breite Smartphones geprüft und überarbeitet; Navigation, Kopfbereich, Karten, Gästedaten und Sharing-Aktionen passen sich ohne horizontales Überlaufen an.
 - Lokale Browserprüfung der öffentlichen Einladungsroute erfolgreich: ungültiger Token zeigt den sicheren Nicht-gefunden-Zustand ohne Fehler-Overlay oder Konsolenfehler.
 - Transaktionaler RSVP-Ende-zu-Ende-Test erfolgreich: Testgast angelegt, Einladung als `anon` gelesen, Zusage als `anon` gespeichert, Antwortzeitpunkt geprüft und sämtliche Testdaten per `ROLLBACK` verworfen.
