@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getSupabaseClient } from "../../lib/supabase";
 import { ensureWeddingWorkspace } from "../../lib/workspace";
 import { ensureAccountProfile, ensurePartnerProfile } from "../../lib/account";
+import { isPartnerDemoAllowed } from "../../lib/partner-demo";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -14,8 +15,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [partnerDemoAvailable, setPartnerDemoAvailable] = useState(false);
 
   useEffect(() => {
+    const demoUrl = new URL(window.location.href);
+    demoUrl.searchParams.set("demo", "1");
+    setPartnerDemoAvailable(isPartnerDemoAllowed(demoUrl));
     const supabase = getSupabaseClient();
     void supabase.auth.getUser().then(({ data }) => {
       if (data.user) void routeAuthenticatedUser(data.user);
@@ -69,6 +74,7 @@ export default function LoginPage() {
           {error && <p className={styles.error} role="alert">{error}</p>}
           <button className={styles.submit} disabled={busy} type="submit">{busy ? "Einen Moment …" : "Sicher anmelden"}</button>
         </form>
+        {partnerDemoAvailable && <Link className={styles.back} href="/partner?demo=1">Partner-Demo ohne Anmeldung öffnen →</Link>}
         <Link className={styles.back} href="/">← Zurück zur Startseite</Link>
       </section>
       <aside className={styles.promise} aria-label="Ouivio Vorteile">

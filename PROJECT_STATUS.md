@@ -61,6 +61,7 @@ Technische Grundlage:
 - Abmeldung ist direkt im Dashboard möglich.
 - Registrierung unterscheidet Kunden- und Partnerkonten und leitet nach der Anmeldung in den passenden Bereich weiter.
 - Partner besitzen unter `/partner` ein eigenständiges responsives Dashboard mit Kennzahlen, Monatskalender und Tagesagenda.
+- Für die Entwicklung steht unter `/partner?demo=1` ein klar gekennzeichneter Partner-Demomodus ohne Anmeldung bereit. Er ist auf localhost und den festen Feature-Preview-Host begrenzt, verwendet ausschließlich lokale Beispieldaten und kann keine produktiven Supabase-Daten lesen oder verändern.
 - Partnertermine werden als Anfrage, Option, Buchung, Termin oder Sperrzeit im persönlichen Supabase-Partnerbereich gespeichert.
 - Partnertermine können nachträglich bearbeitet und mit Status, Ort sowie internen Notizen gepflegt werden.
 - Der Kalender erkennt zeitliche Überschneidungen mit aktiven Einträgen und warnt vor dem Speichern, ohne begründete Paralleltermine mehrerer Teams zu blockieren.
@@ -101,6 +102,7 @@ Technische Grundlage:
 - Benachrichtigungen, Nachrichten und Mehrbenutzer-Zusammenarbeit fehlen.
 - Es gibt noch keine automatisierten Tests.
 - Die Registrierungsoberfläche ist im Pre-Launch-Modus entfernt. Die Deaktivierung der Supabase-Selbstregistrierung auf Projektebene muss separat in den Auth-Einstellungen verifiziert werden.
+- Änderungen im Partner-Demomodus sind absichtlich flüchtig und gehen beim Neuladen verloren.
 - `npm audit --omit=dev` meldet drei hohe transitive Hinweise über die bestehende Next.js-15-Abhängigkeit (`postcss` und `sharp`); eine separat geprüfte Next.js-Major-Aktualisierung ist offen.
 
 ## Offene Aufgaben
@@ -135,6 +137,7 @@ Priorität 3 – Qualität und Betrieb:
 - Neue Funktionen entstehen im bestehenden Dashboard; Startseite und Dashboard bleiben technisch und gestalterisch getrennt.
 - Laufende Kernentwicklung erfolgt auf `feat/ouivio-core-foundation`.
 - Während der Pre-Launch-Phase bleibt nur die Startseite allgemein öffentlich sichtbar. Der Dashboard-Link führt zur Anmeldung; neue Kunden- und Partnerkonten können über die Ouivio-Oberfläche nicht angelegt werden.
+- Der anonyme Partner-Demomodus ist ausschließlich für localhost und den festen Entwicklungsbranch-Preview zugelassen. Er nutzt keine Supabase-Abfragen; Production und echte Partnerdaten bleiben weiterhin authentifizierungspflichtig.
 - Produktionsveröffentlichungen erfolgen ausschließlich nach ausdrücklicher Freigabe. Ein Push auf den Entwicklungsbranch ist keine Freigabe für `main` oder `www.ouivio.com`.
 - `AGENTS.md` und `PROJECT_STATUS.md` sind vor jeder Änderung zu lesen.
 - `PROJECT_STATUS.md` wird nach jedem größeren Arbeitsschritt aktualisiert.
@@ -187,3 +190,5 @@ Priorität 3 – Qualität und Betrieb:
 - Partner-Kalendergrundlage in Supabase angewendet und geprüft: vier neue öffentliche Tabellen mit aktiver RLS sowie ein privater, für Browserrollen gesperrter Secret-Speicher.
 - TypeScript-Prüfung und optimierter Production-Build einschließlich der neuen Route `/partner` erfolgreich.
 - TypeScript-Prüfung und optimierter Production-Build nach Ergänzung von Terminbearbeitung, Status-/Notizpflege, Sperrzeit-Schnellaktion und Überschneidungswarnung erfolgreich; geschützte Startseitenkopien weiterhin bytegleich.
+- Partner-Demomodus ohne Anmeldung ergänzt; TypeScript-Prüfung und optimierter Production-Build erfolgreich, geschützte Startseitenkopien weiterhin bytegleich.
+- Lokale Browserprüfung unter `/partner?demo=1` erfolgreich: Partner-Dashboard, Monatskalender, Beispieldaten und Demo-Hinweis laden ohne Anmeldung und ohne Next.js-Fehleroverlay.

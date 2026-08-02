@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ensureAccountProfile, ensurePartnerProfile } from "../../lib/account";
 import { createPartnerEvent, deletePartnerEvent, fetchPartnerEvents, updatePartnerEvent, type PartnerCalendarEvent, type PartnerEventType } from "../../lib/partner-calendar";
+import { createPartnerDemoEvents, isPartnerDemoAllowed } from "../../lib/partner-demo";
 import { getSupabaseClient } from "../../lib/supabase";
 import styles from "./partner.module.css";
 
@@ -32,11 +33,20 @@ export default function PartnerDashboard() {
   const [editingId, setEditingId] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
     let active = true;
     void (async () => {
       try {
+        if (isPartnerDemoAllowed(window.location)) {
+          if (!active) return;
+          setDemoMode(true);
+          setBusinessName("Ouivio Demo Partner");
+          setEvents(createPartnerDemoEvents());
+          setReady(true);
+          return;
+        }
         const supabase = getSupabaseClient();
         const { data } = await supabase.auth.getUser();
         if (!data.user) return router.replace("/login");
@@ -73,11 +83,20 @@ export default function PartnerDashboard() {
 
   const addEvent = async (formEvent: React.FormEvent) => {
     formEvent.preventDefault();
-    if (!partnerId || !title || !startsAt || !endsAt || saving) return;
+    if ((!partnerId && !demoMode) || !title || !startsAt || !endsAt || saving) return;
     if (new Date(endsAt) <= new Date(startsAt)) { setError("Das Ende muss nach dem Beginn liegen."); return; }
     setSaving(true); setError("");
     try {
       const input = { title: title.trim(), startsAt: new Date(startsAt).toISOString(), endsAt: new Date(endsAt).toISOString(), location: location.trim(), notes: notes.trim(), type: eventType, status: eventStatus };
+      if (demoMode) {
+        const demoEvent: PartnerCalendarEvent = { id: editingId || `demo-${Date.now()}`, partnerId: "demo", ...input, source: "ouivio" };
+        setEvents((current) => editingId
+          ? current.map((event) => event.id === editingId ? demoEvent : event).sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+          : [...current, demoEvent].sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
+        setSelectedDay(dateKey(new Date(demoEvent.startsAt)));
+        resetForm();
+        return;
+      }
       if (editingId) {
         const updated = await updatePartnerEvent(editingId, input);
         setEvents((current) => current.map((event) => event.id === updated.id ? updated : event).sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
@@ -103,6 +122,7 @@ export default function PartnerDashboard() {
     </aside>
     <section className={styles.content}>
       <header className={styles.topbar}><div><small>Ouivio Partner</small><strong>{view}</strong></div><button onClick={() => prepareNewEvent()}>+ Neuer Termin</button><button className={styles.logout} onClick={signOut}>Abmelden</button></header>
+      {demoMode && <div className={styles.demoNotice} role="status"><strong>Partner-Demo</strong><span>Beispieldaten – Änderungen bleiben nur in diesem geöffneten Browserfenster.</span></div>}
       {(view === "Übersicht" || view === "Kalender") && <>
         {view === "Übersicht" && <><section className={styles.welcome}><div><span>Guten Tag, {businessName}</span><h1>Heute im Blick.<br/>Jeden Termin im Griff.</h1><p>Eure Anfragen, Buchungen und Verfügbarkeiten – zentral in Ouivio geplant.</p></div><div className={styles.syncState}><i>✓</i><span><strong>Kalender aktuell</strong><small>Ouivio ist eure zentrale Planung</small></span></div></section><section className={styles.stats}><article><small>Neue Anfragen</small><strong>{inquiries}</strong><span>Offene Entscheidungen</span></article><article><small>Bestätigte Buchungen</small><strong>{booked}</strong><span>Im Ouivio-Kalender</span></article><article><small>Auslastung</small><strong>{events.length ? Math.min(98, Math.round(booked / Math.max(events.length, 1) * 100)) : 0}%</strong><span>Auf Basis eurer Termine</span></article></section></>}
         <section className={styles.calendarLayout}>
@@ -112,7 +132,7 @@ export default function PartnerDashboard() {
             <div className={styles.monthGrid}>{days.map((day) => { const key = dateKey(day); const dayEvents = events.filter((event) => dateKey(new Date(event.startsAt)) === key); return <button aria-pressed={selectedDay === key} className={day.getMonth() !== month.getMonth() ? styles.outside : ""} key={key} onClick={() => setSelectedDay(key)}><span>{day.getDate()}</span><div>{dayEvents.slice(0,3).map((event) => <i className={styles[event.type]} key={event.id} title={event.title}/>)}</div></button>; })}</div>
             <div className={styles.legend}>{(["inquiry","option","booking","appointment","blocked"] as PartnerEventType[]).map((type) => <span key={type}><i className={styles[type]}/>{eventLabels[type]}</span>)}</div>
           </article>
-          <aside className={styles.agenda}><div className={styles.agendaHead}><div><small>{new Date(`${selectedDay}T12:00:00`).toLocaleDateString("de-DE", { weekday: "long" })}</small><h2>{new Date(`${selectedDay}T12:00:00`).toLocaleDateString("de-DE", { day: "2-digit", month: "long" })}</h2></div><button onClick={() => prepareNewEvent("blocked")}>Tag sperren</button></div>{selectedEvents.length ? selectedEvents.map((event) => <article className={event.status === "cancelled" ? styles.cancelledEvent : ""} key={event.id}><i className={styles[event.type]}/><div><small>{time(event.startsAt)}–{time(event.endsAt)} · {eventLabels[event.type]}</small><strong>{event.title}</strong><span>{event.location || "Ohne Ortsangabe"}</span><em>{statusLabels[event.status]} · {sourceLabel(event.source)}</em></div><div className={styles.eventActions}><button aria-label={`${event.title} bearbeiten`} onClick={() => editEvent(event)}>Bearbeiten</button><button aria-label={`${event.title} löschen`} onClick={() => void deletePartnerEvent(event.id).then(() => setEvents((current) => current.filter((item) => item.id !== event.id)))}>×</button></div></article>) : <p>Noch keine Termine an diesem Tag.</p>}</aside>
+          <aside className={styles.agenda}><div className={styles.agendaHead}><div><small>{new Date(`${selectedDay}T12:00:00`).toLocaleDateString("de-DE", { weekday: "long" })}</small><h2>{new Date(`${selectedDay}T12:00:00`).toLocaleDateString("de-DE", { day: "2-digit", month: "long" })}</h2></div><button onClick={() => prepareNewEvent("blocked")}>Tag sperren</button></div>{selectedEvents.length ? selectedEvents.map((event) => <article className={event.status === "cancelled" ? styles.cancelledEvent : ""} key={event.id}><i className={styles[event.type]}/><div><small>{time(event.startsAt)}–{time(event.endsAt)} · {eventLabels[event.type]}</small><strong>{event.title}</strong><span>{event.location || "Ohne Ortsangabe"}</span><em>{statusLabels[event.status]} · {sourceLabel(event.source)}</em></div><div className={styles.eventActions}><button aria-label={`${event.title} bearbeiten`} onClick={() => editEvent(event)}>Bearbeiten</button><button aria-label={`${event.title} löschen`} onClick={() => demoMode ? setEvents((current) => current.filter((item) => item.id !== event.id)) : void deletePartnerEvent(event.id).then(() => setEvents((current) => current.filter((item) => item.id !== event.id)))}>×</button></div></article>) : <p>Noch keine Termine an diesem Tag.</p>}</aside>
         </section>
         <section className={styles.bottomGrid}><form id="partner-event-form" className={styles.eventForm} onSubmit={addEvent}><div className={styles.formHead}><div><small>Ouivio Kalender</small><h2>{editingId ? "Termin bearbeiten" : "Termin eintragen"}</h2></div>{editingId && <button type="button" onClick={resetForm}>Abbrechen</button>}</div><label>Titel<input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Besichtigung, Hochzeit, Sperrzeit …"/></label><div><label>Beginn<input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} required/></label><label>Ende<input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} required/></label></div><div><label>Art<select value={eventType} onChange={(e) => setEventType(e.target.value as PartnerEventType)}>{Object.entries(eventLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Status<select value={eventStatus} onChange={(e) => setEventStatus(e.target.value as PartnerCalendarEvent["status"])}>{Object.entries(statusLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label></div><label>Ort<input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Optional"/></label><label>Interne Notiz<textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Aufbauzeit, Ansprechpartner, Besonderheiten …" rows={3}/></label>{conflicts.length > 0 && <div className={styles.conflict} role="status"><strong>Terminüberschneidung erkannt</strong><span>{conflicts.map((event) => event.title).join(", ")}</span></div>}{error && <p role="alert">{error}</p>}<button disabled={saving}>{saving ? "Wird gespeichert …" : editingId ? "Änderungen speichern" : "Termin speichern"}</button></form><CalendarConnections /></section>
       </>}
