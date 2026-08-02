@@ -8,7 +8,7 @@ Ausgangs-Commit der Bestandsaufnahme: `3585c2a` (`Serve approved Ouivio landing 
 
 ## Aktueller Entwicklungsstand
 
-Ouivio besteht aus einer geschützten statischen HTML-Startseite und einem separaten interaktiven Next.js-Dashboard. Die Root-Route `/` leitet auf `/index.html` um; von dort führt „Dashboard öffnen“ zur zentralen Kontoart-Auswahl unter `/access`.
+Ouivio besteht aus einer geschützten statischen HTML-Startseite und einem separaten interaktiven Next.js-Dashboard. Die Root-Route `/` leitet ausdrücklich zum oberen Seitenbereich unter `/index.html#top` um; von dort führt „Dashboard öffnen“ zur zentralen Kontoart-Auswahl unter `/access`.
 
 Technische Grundlage:
 
@@ -205,6 +205,7 @@ Priorität 3 – Qualität und Betrieb:
 - Zugangsauswahl vereinfacht: Ein direkter Kunden- oder Partner-Einstieg setzt die Rolle einmalig vor und blendet die redundante zweite Auswahl aus.
 - Partner-Selbstregistrierung für die Pilotphase gesperrt: Sämtliche öffentlichen Anbieter-Einstiege führen zum bestehenden Pilotpartner-Bereich auf der Startseite; Kundenregistrierung bleibt im Feature-Preview verfügbar.
 - Anbieter-Einstiege verwenden bewusst `/index.html#partner`, weil der Root-Redirect von `/` sonst den Anker verlieren würde. Damit landet der Browser direkt am Pilotpartner-Formular.
+- Browserablauf geprüft: Ein allgemeiner Rückweg auf `/` darf keinen zuvor verwendeten `#partner`-Anker fortführen. Der Root-Redirect setzt deshalb explizit `#top`; ausschließlich Anbieter-Einstiege verwenden `#partner`.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Umstellung auf den manuellen Pilotpartner-Prozess erfolgreich. Die beiden Startseitenkopien sind inhaltlich identisch; nur die bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach der Vereinfachung des Rollen-Einstiegs erfolgreich; nur die bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen.
 - Zugangswege zwischen Startseite, öffentlicher Suche, Anmeldung, Kunden-Dashboard und Partnerbereich vereinheitlicht. Die Original-Startseite und die eingebettete rote Ouivio-Wortmarke wurden nicht gestaltet oder verändert; ausschließlich Ziel-URLs bestehender Schaltflächen wurden angepasst und beide HTML-Kopien synchron gehalten.
