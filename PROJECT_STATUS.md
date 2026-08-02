@@ -55,10 +55,10 @@ Technische Grundlage:
 - Gästeanzahl, Zusagen und offene Antworten werden aus den echten Supabase-Daten auf der Übersicht berechnet.
 - Rücklink vom Dashboard zur Startseite ist vorhanden.
 - Das Dashboard ist für schmale Smartphones optimiert: sichere untere Navigation, überlauffreier Kopfbereich, kompaktere Karten und gut erreichbare Sharing-Aktionen mit mindestens 44 Pixel hohen Touch-Zielen.
-- Die Anmeldung für Kunden- und Partnerkonten steht unter `/login` bereit. Auf localhost und dem festen Feature-Preview können beide Kontoarten zur Entwicklungsprüfung selbst registriert werden; die Production-Oberfläche bleibt ohne Registrierungsoption.
-- Der Zugang ist über `/access` eindeutig nach Rolle getrennt: Paare starten ein Kundenkonto, Unternehmen ein Partnerkonto. Bestehende Konten melden sich über denselben Einstieg an und werden danach automatisch zum passenden Kunden- oder Partnerbereich geleitet.
-- Nach einer Wahl unter `/access` ist die Kontoart im folgenden Registrierungsformular bereits festgelegt; die doppelte Rollenwahl erscheint dort nicht erneut. Ein Wechsel erfolgt bewusst über den Rücklink zur Kontoart-Auswahl.
-- Die Startseite verlinkt „Dashboard öffnen“ auf die Kontoart-Auswahl und „Pilotpartner werden“ direkt auf den Partner-Einstieg. In der öffentlichen Suche ist der Partner-Einstieg zusätzlich sichtbar; Kontoaufforderungen für Merkliste und Warenkorb führen gezielt zum Kunden-Einstieg.
+- Die Anmeldung für Kundenkonten steht unter `/login` bereit. Auf localhost und dem festen Feature-Preview können Kundenkonten zur Entwicklungsprüfung selbst registriert werden; die Production-Oberfläche bleibt ohne Registrierungsoption.
+- Der Zugang ist über `/access` eindeutig nach Rolle getrennt: Paare starten ein Kundenkonto. Unternehmen werden zur limitierten Pilotphase auf der Startseite mit dem bestehenden Kontaktformular geführt; sie erhalten erst nach individueller Prüfung einen Zugang.
+- Nach einer Wahl unter `/access` ist das Kundenkonto im folgenden Registrierungsformular bereits festgelegt. Anbieter werden nicht zur Selbstregistrierung geführt, sondern bewusst in den Pilotphasenprozess auf der Startseite.
+- Die Startseite verlinkt „Dashboard öffnen“ auf die Kontoart-Auswahl und „Pilotpartner werden“ in den Pilotphasenbereich. In der öffentlichen Suche führt „Für Anbieter“ ebenfalls dorthin; Kontoaufforderungen für Merkliste und Warenkorb führen gezielt zum Kunden-Einstieg.
 - Nicht angemeldete Dashboard-Aufrufe werden zur Anmeldung weitergeleitet; Sitzungen werden automatisch gespeichert und erneuert.
 - Nach der ersten bestätigten Anmeldung wird automatisch ein persönlicher Hochzeitsbereich mit Eigentümer-Mitgliedschaft angelegt.
 - Abmeldung ist direkt im Dashboard möglich.
@@ -131,7 +131,7 @@ Technische Grundlage:
 - Suche wirkt derzeit nur auf die lokale Anbieterliste.
 - Benachrichtigungen, Nachrichten und Mehrbenutzer-Zusammenarbeit fehlen.
 - Es gibt noch keine automatisierten Tests.
-- Die Registrierungsoberfläche bleibt in Production im Pre-Launch-Modus entfernt. Kunden- und Partnerregistrierung sind ausschließlich auf localhost und dem festen Feature-Preview als Entwicklungsablauf sichtbar; die Deaktivierung der Supabase-Selbstregistrierung auf Projektebene muss separat in den Auth-Einstellungen verifiziert werden.
+- Die Registrierungsoberfläche bleibt in Production im Pre-Launch-Modus entfernt. Kundenregistrierung ist ausschließlich auf localhost und dem festen Feature-Preview als Entwicklungsablauf sichtbar; Partner-Selbstregistrierung ist während der Pilotphase gesperrt.
 - Änderungen im Partner-Demomodus sind absichtlich flüchtig und gehen beim Neuladen verloren.
 - Der sichere Demo-Modus zeigt die Fotografie-Spezialisierung, führt jedoch bewusst keine echten Portfolio-Uploads aus.
 - `npm audit --omit=dev` meldet drei hohe transitive Hinweise über die bestehende Next.js-15-Abhängigkeit (`postcss` und `sharp`); eine separat geprüfte Next.js-Major-Aktualisierung ist offen.
@@ -193,8 +193,8 @@ Priorität 3 – Qualität und Betrieb:
 - Buchbare Pakete werden unabhängig von der ursprünglichen Hauptkategorie eines Partnerkontos pro Leistungsbereich geführt. Dadurch kann ein Mehrbereichsanbieter ein Location-Paket und ergänzende Catering- oder Fotografie-Pakete getrennt veröffentlichen und verwalten.
 - Öffentliche Suche und Zusammenstellung bleiben ohne Konto möglich, damit Paare den Marketplace ohne Hürde erkunden können. Persönliche, geräteübergreifende Funktionen (Merkliste und persistenter Warenkorb) bleiben hinter der Anmeldung; die unverbindliche Vorauswahl wird nicht als Buchung oder Reservierung behandelt.
 - Die Kundenregistrierung wird nur auf localhost und dem festen `feat/ouivio-core-foundation`-Preview angezeigt. Die produktive Oberfläche bleibt im Pre-Launch-Zustand ohne Registrierungsoption; das bestehende Supabase-Projekt und dessen globale Auth-Einstellungen werden dafür nicht verändert.
-- Die Partnerregistrierung folgt derselben Preview-Begrenzung wie die Kundenregistrierung. Die bei der Registrierung übermittelten Unternehmensdaten dienen ausschließlich der einmaligen Profilerstellung; Autorisierung bleibt durch die bestehenden eigentümergebundenen RLS-Regeln abgesichert und beruht nicht auf bearbeitbaren Nutzer-Metadaten.
-- Die zentrale Zugangsauswahl unter `/access` ist der Standard-Einstieg für nicht angemeldete Nutzer. Direkte Aufrufe des Kunden-Dashboards führen dorthin; direkte Partneraufrufe führen gezielt zum Partner-Login. Nach einer bestehenden Anmeldung entscheidet das geschützte Kontoprofil weiterhin serverseitig, welcher Bereich geöffnet wird.
+- Neue Partnerzugänge bleiben während der limitierten Pilotphase gesperrt. Interessierte Anbieter nutzen das bestehende Pilotpartner-Formular auf der Startseite; Accounts werden erst nach manueller Prüfung angelegt oder freigeschaltet.
+- Die zentrale Zugangsauswahl unter `/access` ist der Standard-Einstieg für nicht angemeldete Nutzer. Direkte Aufrufe des Kunden-Dashboards führen dorthin; direkte Partneraufrufe und öffentliche Anbieterlinks führen in den Pilotphasenbereich. Nach einer bestehenden Anmeldung entscheidet das geschützte Kontoprofil weiterhin serverseitig, welcher Bereich geöffnet wird.
 - Checkout wird in Stufen entwickelt: Der aktuelle Preview darf keine Zahlung oder Terminreservierung auslösen. Erst nach der verbindlichen Mehranbieter-Verfügbarkeitsprüfung wird eine Zahlungsintegration ausgewählt und eingebunden.
 - Öffentliche Angebotsdaten werden ausschließlich über `search_published_partner_packages` bereitgestellt. Die absichtlich anonyme, `SECURITY DEFINER`-basierte Funktion gibt nur veröffentlichte Pakete und aktive, vom Partner freigegebene Leistungsbereiche zurück; sie verwendet einen leeren Suchpfad, besitzt explizite Ausführungsrechte und öffnet keine Tabellenrechte.
 - Die öffentliche Katalogfunktion darf zusätzlich anhand eines konkreten Wunschzeitpunkts unpassende Pakete ausblenden. Die Prüfung erfolgt serverseitig gegen Ressourcen, Puffer, Kalendereinträge und aktive Zahlungsfenster; weder Belegungsgrund noch Kalenderdetails werden veröffentlicht.
@@ -203,6 +203,8 @@ Priorität 3 – Qualität und Betrieb:
 ## Letzte Prüfung
 
 - Zugangsauswahl vereinfacht: Ein direkter Kunden- oder Partner-Einstieg setzt die Rolle einmalig vor und blendet die redundante zweite Auswahl aus.
+- Partner-Selbstregistrierung für die Pilotphase gesperrt: Sämtliche öffentlichen Anbieter-Einstiege führen zum bestehenden Pilotpartner-Bereich auf der Startseite; Kundenregistrierung bleibt im Feature-Preview verfügbar.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach Umstellung auf den manuellen Pilotpartner-Prozess erfolgreich. Die beiden Startseitenkopien sind inhaltlich identisch; nur die bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach der Vereinfachung des Rollen-Einstiegs erfolgreich; nur die bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen.
 - Zugangswege zwischen Startseite, öffentlicher Suche, Anmeldung, Kunden-Dashboard und Partnerbereich vereinheitlicht. Die Original-Startseite und die eingebettete rote Ouivio-Wortmarke wurden nicht gestaltet oder verändert; ausschließlich Ziel-URLs bestehender Schaltflächen wurden angepasst und beide HTML-Kopien synchron gehalten.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Einführung der Zugangsauswahl erfolgreich. Die neue Route `/access` wird statisch erzeugt; es bestehen nur die zuvor bekannten Autoprefixer-Hinweise in vorhandenen CSS-Dateien.
