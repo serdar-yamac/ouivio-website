@@ -1,12 +1,8 @@
 import type { PartnerCalendarEvent } from "./partner-calendar";
-
-const FEATURE_PREVIEW_HOST = "ouivio-website-git-feat-ouivio-core-foundation-ouivio.vercel.app";
+import { isFeaturePreviewHost } from "./feature-preview";
 
 export function isPartnerDemoAllowed(location: Pick<Location, "hostname" | "search">) {
-  const hostAllowed = location.hostname === "localhost"
-    || location.hostname === "127.0.0.1"
-    || location.hostname === FEATURE_PREVIEW_HOST;
-  return hostAllowed && new URLSearchParams(location.search).get("demo") === "1";
+  return isFeaturePreviewHost(location) && new URLSearchParams(location.search).get("demo") === "1";
 }
 
 export function createPartnerDemoEvents(now = new Date()): PartnerCalendarEvent[] {
