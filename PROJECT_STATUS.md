@@ -73,6 +73,8 @@ Technische Grundlage:
 - Partner verwalten im Bereich „Leistungen“ echte buchbare Pakete mit Preis, Währung, Dauer, Vor-/Nachbereitungszeit, Ressource, Beschreibung und enthaltenen Leistungen. Pakete können als Entwurf gespeichert, bearbeitet, veröffentlicht oder gelöscht werden.
 - Der Partner-Demomodus enthält drei Fotografie-Pakete einschließlich veröffentlichtem und unveröffentlichtem Zustand; Teständerungen bleiben wie alle Demo-Daten lokal im Browser.
 - Die Kundendemo führt vom ausgewählten Luma-Paket über eine Verfügbarkeitsbestätigung in einen eigenen Warenkorb unter `/discover/cart`. Termin, Paket, Dauer und Gesamtpreis werden dort nachvollziehbar zusammengefasst; der Checkout-Schritt erklärt die vorgesehene 15-minütige Reservierung und grenzt die Demo klar von einer Zahlung ab.
+- Im Fotografenprofil ist der Warenkorb dauerhaft sichtbar; nach der Verfügbarkeitsprüfung übernimmt er das aktuell gewählte Paket und den Termin.
+- Auch die Kunden-Anbieterübersicht besitzt oben rechts einen permanent erreichbaren Warenkorb-Einstieg.
 - Die Datenbankgrundlage für Direktbuchungen ist aktiv: Kundenbuchungen erzeugen ein 15-minütiges Zahlungsfenster, übernehmen Paketpreis und Dauer serverseitig und erscheinen automatisch als vorläufiger Eintrag im vorhandenen Partnerkalender.
 - Die Verfügbarkeitsprüfung berücksichtigt Ressourcen, Pufferzeiten, bestehende Kalendertermine und aktive Buchungen. Eine PostgreSQL-Ausschlussregel sowie transaktionale Ressourcensperren verhindern konkurrierende Doppelbuchungen auf Datenbankebene.
 
