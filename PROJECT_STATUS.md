@@ -75,6 +75,7 @@ Technische Grundlage:
 - Die Kundendemo führt vom ausgewählten Luma-Paket über eine Verfügbarkeitsbestätigung in einen eigenen Warenkorb unter `/discover/cart`. Termin, Paket, Dauer und Gesamtpreis werden dort nachvollziehbar zusammengefasst; der Checkout-Schritt erklärt die vorgesehene 15-minütige Reservierung und grenzt die Demo klar von einer Zahlung ab.
 - Im Fotografenprofil ist der Warenkorb dauerhaft sichtbar; nach der Verfügbarkeitsprüfung übernimmt er das aktuell gewählte Paket und den Termin.
 - Auch die Kunden-Anbieterübersicht besitzt oben rechts einen permanent erreichbaren Warenkorb-Einstieg.
+- Das Partnerprofil bietet eine professionelle Mehrbereichs-Konfiguration: eigenständige Karten für Location, Catering und Fotografie mit Aktiv-Status, Buchungsmodell, Externanbieter-Regel und speicherbarem Kundenhinweis.
 - Die Datenbankgrundlage für Direktbuchungen ist aktiv: Kundenbuchungen erzeugen ein 15-minütiges Zahlungsfenster, übernehmen Paketpreis und Dauer serverseitig und erscheinen automatisch als vorläufiger Eintrag im vorhandenen Partnerkalender.
 - Die Verfügbarkeitsprüfung berücksichtigt Ressourcen, Pufferzeiten, bestehende Kalendertermine und aktive Buchungen. Eine PostgreSQL-Ausschlussregel sowie transaktionale Ressourcensperren verhindern konkurrierende Doppelbuchungen auf Datenbankebene.
 
@@ -170,6 +171,7 @@ Priorität 3 – Qualität und Betrieb:
 - Buchbare Kapazität wird über partnerbezogene `resource_key`-Werte modelliert. Dadurch können einzelne Fotografen ein Hauptteam und größere Anbieter später mehrere unabhängig buchbare Teams, Räume oder Ressourcen anbieten.
 - Paketdaten und Preise werden beim Einfügen einer Buchung serverseitig aus dem veröffentlichten Paket übernommen. Browserwerte sind nicht vertrauenswürdig und können weder Preis, Dauer noch Partnerressource einer Buchung bestimmen.
 - Die Partner-Paketverwaltung verwendet ausschließlich die vorhandenen eigentümergebundenen RLS-Richtlinien. Der Rolle `authenticated` wurden gezielt nur die für diese Richtlinien benötigten Schreibrechte auf `partner_packages` erteilt; anonyme Nutzer erhalten keine Tabellenrechte.
+- Anbieter entscheiden je Leistungsbereich autonom zwischen Einzelbuchung, Add-on, Bundle und Komplettpaket sowie über die Zulässigkeit externer Ergänzungen. So können Kunden einzelne Leistungen kombinieren, während Anbieter ihre Angebotsgrenzen verbindlich festlegen.
 
 ## Letzte Prüfung
 
