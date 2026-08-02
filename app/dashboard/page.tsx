@@ -30,6 +30,7 @@ import {
 } from "../../lib/tasks";
 import { ensureWeddingWorkspace } from "../../lib/workspace";
 import { ensureAccountProfile } from "../../lib/account";
+import { readDemoBooking, type DemoBooking } from "../../lib/demo-booking";
 
 const sections = [
   "Übersicht",
@@ -118,6 +119,7 @@ export default function Home() {
   const [guestStatus, setGuestStatus] = useState<RsvpStatus>("open");
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [copiedGuestId, setCopiedGuestId] = useState<string | null>(null);
+  const [demoBooking, setDemoBooking] = useState<DemoBooking | null>(null);
   const done = tasks.filter((task) => task.done).length;
   const progress = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
   const plannedBudget = budgetItems.reduce(
@@ -459,6 +461,10 @@ export default function Home() {
   };
 
   useEffect(() => {
+    setDemoBooking(readDemoBooking());
+  }, []);
+
+  useEffect(() => {
     const supabase = getSupabaseClient();
     let activeSubscription = true;
 
@@ -631,6 +637,7 @@ export default function Home() {
 
         {active === "Übersicht" && (
           <>
+            {demoBooking && <section className="card" style={{ marginBottom: 22, borderColor: "#f1c6cd", background: "#fffafa", display: "flex", gap: 24, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }} role="status"><div><small style={{ color: "#df1632", fontWeight: 800 }}>CHECKOUT-DEMO · NUR DIESES GERÄT</small><h2 style={{ margin: "6px 0" }}>Auswahl in eure Planung übernommen</h2><p style={{ margin: 0, color: "#6f6963" }}>{demoBooking.items.map((item) => item.name).join(" · ")} · {new Date(`${demoBooking.startDate}T12:00:00`).toLocaleDateString("de-DE")}</p></div><button className="primary-button" onClick={() => setActive("Budget")}>Demo-Budget ansehen →</button></section>}
             <section className="hero">
               <div>
                 <p className="eyebrow">Guten Morgen, ihr zwei</p>
@@ -906,6 +913,7 @@ export default function Home() {
           >
               <div className="timeline card" aria-label="Eure nächsten Termine">
               {[
+                ...(demoBooking ? [[new Date(`${demoBooking.startDate}T12:00:00`).toLocaleDateString("de-DE", { day: "2-digit", month: "short" }).toUpperCase(), "Demo-Buchung in Vorbereitung", `${demoBooking.items.length} Leistung${demoBooking.items.length === 1 ? "" : "en"} · keine Reservierung`]] : []),
                 [
                   "18 SEP",
                   "Gespräch mit Luma Fotografie",
@@ -1134,6 +1142,7 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
+                {demoBooking && <div className="budget-item" style={{ background: "#fff8f8" }}><span><strong>Demo-Vormerkung · {demoBooking.items.map((item) => item.category).join(", ")}</strong><small>Nicht gespeichert · keine Reservierung</small></span><span className="budget-amount"><strong>{formatMoney(demoBooking.total)}</strong><small>0,00 € bezahlt</small></span></div>}
               </article>
             </div>
           </Page>
