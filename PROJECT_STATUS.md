@@ -67,6 +67,9 @@ Technische Grundlage:
 - Der Kalender erkennt zeitliche Überschneidungen mit aktiven Einträgen und warnt vor dem Speichern, ohne begründete Paralleltermine mehrerer Teams zu blockieren.
 - Ausgewählte Kalendertage lassen sich über eine Schnellaktion als Sperrzeit vorbereiten; Tagesagenda und Termine zeigen Status sowie Ouivio-/Importquelle.
 - Ein Integrationszentrum für Google Calendar, Outlook/Microsoft 365 und Apple Calendar/iCalendar ist vorbereitet; die produktiven Verbindungen benötigen noch die jeweiligen Anbieter-Zugangsdaten.
+- Partnerprofile unterscheiden zunächst Location, Fotografie und Catering; das Dashboard kann dadurch spezialisierte Funktionsbereiche anzeigen.
+- Fotografen besitzen im Bereich „Leistungen“ eine Portfolioverwaltung für JPG-, PNG- und WebP-Bilder bis 10 MB mit Titel und Bildstil.
+- Portfolio-Dateien liegen in einem privaten Supabase-Storage-Bucket. Metadaten sind per RLS geschützt; Partner können ausschließlich Dateien im eigenen Partnerordner lesen, hochladen, ändern oder löschen.
 
 ### Deployment
 
@@ -103,6 +106,7 @@ Technische Grundlage:
 - Es gibt noch keine automatisierten Tests.
 - Die Registrierungsoberfläche ist im Pre-Launch-Modus entfernt. Die Deaktivierung der Supabase-Selbstregistrierung auf Projektebene muss separat in den Auth-Einstellungen verifiziert werden.
 - Änderungen im Partner-Demomodus sind absichtlich flüchtig und gehen beim Neuladen verloren.
+- Der sichere Demo-Modus zeigt die Fotografie-Spezialisierung, führt jedoch bewusst keine echten Portfolio-Uploads aus.
 - `npm audit --omit=dev` meldet drei hohe transitive Hinweise über die bestehende Next.js-15-Abhängigkeit (`postcss` und `sharp`); eine separat geprüfte Next.js-Major-Aktualisierung ist offen.
 
 ## Offene Aufgaben
@@ -153,6 +157,7 @@ Priorität 3 – Qualität und Betrieb:
 - Die Kontoart wird nach der Registrierungswahl in einem RLS-geschützten Kontoprofil festgeschrieben. Partnerzugänge erzeugen keinen Hochzeitsbereich.
 - Ouivio ist die führende Kalenderdatenquelle; externe Kalender werden providerneutral über Quellen, externe Ereignis-IDs und Sync-Cursor abgeglichen.
 - Kalenderkonflikte werden zunächst als Warnung behandelt. Eine harte Sperre bleibt eine spätere, partnerabhängige Einstellung, weil Anbieter mehrere parallel verfügbare Teams oder Ressourcen besitzen können.
+- Anbieterarten teilen sich eine gemeinsame Partnergrundlage; kategoriespezifische Daten und Oberflächen werden modular ergänzt. Portfolio-Originale bleiben privat, bis eine kontrollierte Veröffentlichung für Kunden umgesetzt ist.
 
 ## Letzte Prüfung
 
@@ -192,3 +197,6 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Production-Build nach Ergänzung von Terminbearbeitung, Status-/Notizpflege, Sperrzeit-Schnellaktion und Überschneidungswarnung erfolgreich; geschützte Startseitenkopien weiterhin bytegleich.
 - Partner-Demomodus ohne Anmeldung ergänzt; TypeScript-Prüfung und optimierter Production-Build erfolgreich, geschützte Startseitenkopien weiterhin bytegleich.
 - Lokale Browserprüfung unter `/partner?demo=1` erfolgreich: Partner-Dashboard, Monatskalender, Beispieldaten und Demo-Hinweis laden ohne Anmeldung und ohne Next.js-Fehleroverlay.
+- Migration für Anbieterkategorien und Fotografen-Portfolios im Supabase-Projekt ausgeführt und geprüft: private Storage-Ablage, eine RLS-geschützte Metadatentabelle sowie vier eigentümergebundene Storage-Richtlinien sind aktiv.
+- TypeScript-Prüfung und optimierter Production-Build nach Einführung der Anbieter-Spezialisierung und Portfolioverwaltung erfolgreich; geschützte Startseitenkopien weiterhin bytegleich.
+- Lokale Browserprüfung erfolgreich: Profil zeigt Location, Fotografie und Catering getrennt; der Fotografie-Leistungsbereich zeigt das geschützte Portfolioformular mit Dateiauswahl, Titel und Bildstil ohne Fehleroverlay.

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ensureAccountProfile, ensurePartnerProfile } from "../../lib/account";
 import { createPartnerEvent, deletePartnerEvent, fetchPartnerEvents, updatePartnerEvent, type PartnerCalendarEvent, type PartnerEventType } from "../../lib/partner-calendar";
 import { createPartnerDemoEvents, isPartnerDemoAllowed } from "../../lib/partner-demo";
+import { deletePortfolioItem, fetchPortfolio, updatePartnerCategory, uploadPortfolioImage, type PartnerCategory, type PortfolioItem } from "../../lib/partner-profile";
 import { getSupabaseClient } from "../../lib/supabase";
 import styles from "./partner.module.css";
 
@@ -34,6 +35,8 @@ export default function PartnerDashboard() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
+  const [category, setCategory] = useState<PartnerCategory | "">("");
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -43,6 +46,7 @@ export default function PartnerDashboard() {
           if (!active) return;
           setDemoMode(true);
           setBusinessName("Ouivio Demo Partner");
+          setCategory("photography");
           setEvents(createPartnerDemoEvents());
           setReady(true);
           return;
@@ -58,6 +62,9 @@ export default function PartnerDashboard() {
         setBusinessName(partner.business_name as string);
         setPartnerId(partner.id as string);
         setEvents(calendarEvents);
+        const partnerCategory = (partner.category || "") as PartnerCategory | "";
+        setCategory(partnerCategory);
+        if (partnerCategory === "photography") setPortfolio(await fetchPortfolio(partner.id as string));
         setReady(true);
       } catch { if (active) setError("Das Partner-Dashboard konnte nicht geladen werden."); }
     })();
@@ -136,7 +143,14 @@ export default function PartnerDashboard() {
         </section>
         <section className={styles.bottomGrid}><form id="partner-event-form" className={styles.eventForm} onSubmit={addEvent}><div className={styles.formHead}><div><small>Ouivio Kalender</small><h2>{editingId ? "Termin bearbeiten" : "Termin eintragen"}</h2></div>{editingId && <button type="button" onClick={resetForm}>Abbrechen</button>}</div><label>Titel<input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Besichtigung, Hochzeit, Sperrzeit …"/></label><div><label>Beginn<input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} required/></label><label>Ende<input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} required/></label></div><div><label>Art<select value={eventType} onChange={(e) => setEventType(e.target.value as PartnerEventType)}>{Object.entries(eventLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Status<select value={eventStatus} onChange={(e) => setEventStatus(e.target.value as PartnerCalendarEvent["status"])}>{Object.entries(statusLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label></div><label>Ort<input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Optional"/></label><label>Interne Notiz<textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Aufbauzeit, Ansprechpartner, Besonderheiten …" rows={3}/></label>{conflicts.length > 0 && <div className={styles.conflict} role="status"><strong>Terminüberschneidung erkannt</strong><span>{conflicts.map((event) => event.title).join(", ")}</span></div>}{error && <p role="alert">{error}</p>}<button disabled={saving}>{saving ? "Wird gespeichert …" : editingId ? "Änderungen speichern" : "Termin speichern"}</button></form><CalendarConnections /></section>
       </>}
-      {!(["Übersicht", "Kalender"] as View[]).includes(view) && <section className={styles.placeholder}><small>Partner Workspace</small><h1>{view}</h1><p>Dieser Bereich wird als Nächstes mit den Kalenderdaten und euren Ouivio-Buchungen verbunden.</p><button onClick={() => setView("Kalender")}>Zum Kalender</button></section>}
+      {view === "Profil" && (
+        <CategorySettings category={category} disabled={demoMode} onChange={async (next) => { await updatePartnerCategory(partnerId, next); setCategory(next); setPortfolio(next === "photography" ? await fetchPortfolio(partnerId) : []); }}/>
+      )}
+      {view === "Leistungen" && category === "photography" && (
+        <PhotographyPortfolio demoMode={demoMode} items={portfolio} partnerId={partnerId} onChange={setPortfolio}/>
+      )}
+      {!(["Übersicht", "Kalender", "Profil", "Leistungen"] as View[]).includes(view) && <section className={styles.placeholder}><small>Partner Workspace</small><h1>{view}</h1><p>Dieser Bereich wird als Nächstes mit den Kalenderdaten und euren Ouivio-Buchungen verbunden.</p><button onClick={() => setView("Kalender")}>Zum Kalender</button></section>}
+      {view === "Leistungen" && category !== "photography" && <section className={styles.placeholder}><small>{categoryLabel(category)}</small><h1>Leistungen</h1><p>{category ? "Die spezialisierten Funktionen für diese Anbieterart werden als nächstes ergänzt." : "Wählt zuerst im Profil eure Anbieterart aus."}</p><button onClick={() => setView("Profil")}>Anbieterart wählen</button></section>}
     </section>
   </main>;
 }
@@ -150,3 +164,7 @@ function time(value: string) { return new Date(value).toLocaleTimeString("de-DE"
 function toLocalInput(value: string) { const date = new Date(value); const offset = date.getTimezoneOffset() * 60_000; return new Date(date.getTime() - offset).toISOString().slice(0, 16); }
 function sourceLabel(source: string) { return source === "google" ? "Google" : source === "microsoft" ? "Outlook" : source === "apple" || source === "ical" ? "Apple/iCal" : "Ouivio"; }
 function icon(view: View) { return view === "Übersicht" ? "⌂" : view === "Kalender" ? "□" : view === "Anfragen" ? "↗" : view === "Buchungen" ? "✓" : view === "Leistungen" ? "◇" : "○"; }
+
+function CategorySettings({category,disabled,onChange}:{category:PartnerCategory|"";disabled:boolean;onChange:(value:PartnerCategory)=>Promise<void>}) { const [busy,setBusy]=useState(false); return <section className={styles.specialized}><small>Partnerprofil</small><h1>Anbieterart festlegen</h1><p>Ouivio zeigt euch anschließend genau die Werkzeuge, die zu eurem Unternehmen passen.</p><div className={styles.categoryGrid}>{([['location','Location','Räume, Kapazitäten und Besichtigungen'],['photography','Fotografie','Portfolio, Bildstil und Pakete'],['catering','Catering','Menüs, Gästezahlen und Verkostungen']] as const).map(([value,title,text])=><button aria-pressed={category===value} disabled={disabled||busy} key={value} onClick={()=>{setBusy(true);void onChange(value).finally(()=>setBusy(false));}}><strong>{title}</strong><span>{text}</span></button>)}</div>{disabled&&<p>Im Demo-Modus ist Fotografie vorausgewählt.</p>}</section>; }
+function PhotographyPortfolio({demoMode,items,partnerId,onChange}:{demoMode:boolean;items:PortfolioItem[];partnerId:string;onChange:(items:PortfolioItem[])=>void}) { const [file,setFile]=useState<File|null>(null);const [title,setTitle]=useState('');const [style,setStyle]=useState('Dokumentarisch');const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');const submit=async(e:React.FormEvent)=>{e.preventDefault();if(!file||!title)return;if(demoMode){setMessage('Uploads sind in der sicheren Demo deaktiviert. Mit einem Partnerkonto werden Bilder gespeichert.');return;}setBusy(true);setMessage('');try{await uploadPortfolioImage(partnerId,file,title,style,items.length);onChange(await fetchPortfolio(partnerId));setFile(null);setTitle('');}catch(error){setMessage(error instanceof Error&&error.message==='INVALID_IMAGE'?'Bitte JPG, PNG oder WebP bis 10 MB wählen.':'Das Bild konnte nicht gespeichert werden.');}finally{setBusy(false);}};return <section className={styles.specialized}><small>Fotografie</small><h1>Euer Portfolio</h1><p>Zeigt Paaren euren Stil und eure Arbeitsweise. Unveröffentlichte Bilder bleiben geschützt.</p><form className={styles.portfolioForm} onSubmit={submit}><label>Bild<input accept="image/jpeg,image/png,image/webp" onChange={e=>setFile(e.target.files?.[0]??null)} required type="file"/></label><label>Titel<input maxLength={120} onChange={e=>setTitle(e.target.value)} placeholder="Sommerhochzeit am See" required value={title}/></label><label>Bildstil<select onChange={e=>setStyle(e.target.value)} value={style}><option>Dokumentarisch</option><option>Editorial</option><option>Fine Art</option><option>Modern</option><option>Natürlich</option></select></label><button disabled={busy}>{busy?'Wird hochgeladen …':'Bild hinzufügen'}</button></form>{message&&<p role="status">{message}</p>}<div className={styles.portfolioGrid}>{items.map(item=><article key={item.id}><div aria-label={item.title} role="img" style={{backgroundImage:`url(${item.imageUrl})`}}/><strong>{item.title}</strong><span>{item.style||'Ohne Stilangabe'}</span><button onClick={()=>{if(demoMode)return;void deletePortfolioItem(item).then(()=>onChange(items.filter(entry=>entry.id!==item.id)));}}>Löschen</button></article>)}</div></section>; }
+function categoryLabel(category:PartnerCategory|""){return category==='location'?'Location':category==='photography'?'Fotografie':category==='catering'?'Catering':'Anbieterprofil';}
