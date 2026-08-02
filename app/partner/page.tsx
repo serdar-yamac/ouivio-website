@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ensureAccountProfile, ensurePartnerProfile } from "../../lib/account";
 import { createPartnerEvent, deletePartnerEvent, fetchPartnerEvents, updatePartnerEvent, type PartnerCalendarEvent, type PartnerEventType } from "../../lib/partner-calendar";
-import { createPartnerDemoEvents, isPartnerDemoAllowed } from "../../lib/partner-demo";
+import { createPartnerDemoEvents, getCustomerDemoBookingEvent, isPartnerDemoAllowed } from "../../lib/partner-demo";
 import { deletePortfolioItem, fetchPortfolio, updatePartnerCategory, updatePartnerProfile, uploadPortfolioImage, type PartnerCategory, type PortfolioItem } from "../../lib/partner-profile";
 import { createPartnerPackage, deletePartnerPackage, fetchPartnerPackages, updatePartnerPackage, type PartnerPackage, type PartnerPackageInput } from "../../lib/partner-packages";
 import { fetchPartnerServiceAreas, savePartnerServiceArea, type PartnerServiceArea } from "../../lib/partner-service-areas";
@@ -53,7 +53,8 @@ export default function PartnerDashboard() {
           setDemoMode(true);
           setBusinessName("Ouivio Demo Partner");
           setCategory("photography");
-          setEvents(createPartnerDemoEvents());
+          const customerBooking = getCustomerDemoBookingEvent();
+          setEvents(customerBooking ? [...createPartnerDemoEvents(), customerBooking] : createPartnerDemoEvents());
           setPackages(createPartnerDemoPackages());
           setServiceAreas(createDemoServiceAreas());
           setReady(true);
@@ -140,7 +141,7 @@ export default function PartnerDashboard() {
     </aside>
     <section className={styles.content}>
       <header className={styles.topbar}><div><small>Ouivio Partner</small><strong>{view}</strong></div>{demoMode&&<Link className={styles.customerPreview} href="/discover?demo=1">Kundensicht</Link>}<button onClick={() => prepareNewEvent()}>+ Neuer Termin</button><button className={styles.logout} onClick={signOut}>Abmelden</button></header>
-      {demoMode && <div className={styles.demoNotice} role="status"><strong>Partner-Demo</strong><span>Beispieldaten – Änderungen bleiben nur in diesem geöffneten Browserfenster.</span></div>}
+      {demoMode && <div className={styles.demoNotice} role="status"><strong>Partner-Demo</strong><span>Beispieldaten – eine abgeschlossene Kunden-Demo wird hier als vorläufige Buchung angezeigt. Es werden keine echten Kalender verändert.</span></div>}
       {(view === "Übersicht" || view === "Kalender") && <>
         {view === "Übersicht" && <><section className={styles.welcome}><div><span>Guten Tag, {businessName}</span><h1>Heute im Blick.<br/>Jeden Termin im Griff.</h1><p>Eure Anfragen, Buchungen und Verfügbarkeiten – zentral in Ouivio geplant.</p></div><div className={styles.syncState}><i>✓</i><span><strong>Kalender aktuell</strong><small>Ouivio ist eure zentrale Planung</small></span></div></section><section className={styles.stats}><article><small>Neue Anfragen</small><strong>{inquiries}</strong><span>Offene Entscheidungen</span></article><article><small>Bestätigte Buchungen</small><strong>{booked}</strong><span>Im Ouivio-Kalender</span></article><article><small>Auslastung</small><strong>{events.length ? Math.min(98, Math.round(booked / Math.max(events.length, 1) * 100)) : 0}%</strong><span>Auf Basis eurer Termine</span></article></section></>}
         <section className={styles.calendarLayout}>
