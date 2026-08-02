@@ -70,6 +70,9 @@ Technische Grundlage:
 - Partnerprofile unterscheiden zunächst Location, Fotografie und Catering; das Dashboard kann dadurch spezialisierte Funktionsbereiche anzeigen.
 - Fotografen besitzen im Bereich „Leistungen“ eine Portfolioverwaltung für JPG-, PNG- und WebP-Bilder bis 10 MB mit Titel und Bildstil.
 - Portfolio-Dateien liegen in einem privaten Supabase-Storage-Bucket. Metadaten sind per RLS geschützt; Partner können ausschließlich Dateien im eigenen Partnerordner lesen, hochladen, ändern oder löschen.
+- Partner können technisch veröffentlichbare Leistungspakete mit Dauer, Preis, Währung, Vor-/Nachbereitungszeit und einer buchbaren Ressource pflegen; die Kunden- und Partneroberflächen dafür folgen noch.
+- Die Datenbankgrundlage für Direktbuchungen ist aktiv: Kundenbuchungen erzeugen ein 15-minütiges Zahlungsfenster, übernehmen Paketpreis und Dauer serverseitig und erscheinen automatisch als vorläufiger Eintrag im vorhandenen Partnerkalender.
+- Die Verfügbarkeitsprüfung berücksichtigt Ressourcen, Pufferzeiten, bestehende Kalendertermine und aktive Buchungen. Eine PostgreSQL-Ausschlussregel sowie transaktionale Ressourcensperren verhindern konkurrierende Doppelbuchungen auf Datenbankebene.
 
 ### Deployment
 
@@ -99,6 +102,7 @@ Technische Grundlage:
 - Externe Kalender sind noch nicht produktiv mit Google Calendar oder Outlook verbunden.
 - Die Partner-Kalenderoberfläche und das Sync-Datenmodell sind fertig; echte Zwei-Wege-Synchronisation ist bis zur Einrichtung von Google-/Microsoft-OAuth und Apple iCalendar/CalDAV noch nicht aktiv.
 - Anbieterprofile, Detailansichten, Live-Verfügbarkeit und direkte Buchungen sind noch nicht produktiv umgesetzt.
+- Das Direktbuchungsschema und die atomare Belegungsprüfung sind aktiv; Checkout, Zahlungsbestätigung, automatische Ablaufverarbeitung der 15-minütigen Reservierung und produktive UI-Anbindung fehlen noch.
 - Einladungslinks verwenden vor dem Production-Rollout bewusst den stabilen Vercel-Feature-Branch-Alias; die endgültige Ouivio-Domain muss vor dem öffentlichen Start eingesetzt werden.
 - Gästelisten-Import, Haushalte, Begleitpersonen und serverseitiger automatischer Versand fehlen noch; persönliche Links können bereits über WhatsApp, Instagram oder das Standard-Mailprogramm geteilt werden.
 - Suche wirkt derzeit nur auf die lokale Anbieterliste.
@@ -159,6 +163,8 @@ Priorität 3 – Qualität und Betrieb:
 - Kalenderkonflikte werden zunächst als Warnung behandelt. Eine harte Sperre bleibt eine spätere, partnerabhängige Einstellung, weil Anbieter mehrere parallel verfügbare Teams oder Ressourcen besitzen können.
 - Anbieterarten teilen sich eine gemeinsame Partnergrundlage; kategoriespezifische Daten und Oberflächen werden modular ergänzt. Portfolio-Originale bleiben privat, bis eine kontrollierte Veröffentlichung für Kunden umgesetzt ist.
 - Ouivio wird als direkt buchbarer Marketplace entwickelt: Kunden prüfen einen Termin gegen die echte Anbieterverfügbarkeit und buchen verfügbare Leistungen anschließend unmittelbar. Ein manueller Anfrageprozess ist nicht Teil des vorgesehenen Kernablaufs.
+- Buchbare Kapazität wird über partnerbezogene `resource_key`-Werte modelliert. Dadurch können einzelne Fotografen ein Hauptteam und größere Anbieter später mehrere unabhängig buchbare Teams, Räume oder Ressourcen anbieten.
+- Paketdaten und Preise werden beim Einfügen einer Buchung serverseitig aus dem veröffentlichten Paket übernommen. Browserwerte sind nicht vertrauenswürdig und können weder Preis, Dauer noch Partnerressource einer Buchung bestimmen.
 
 ## Letzte Prüfung
 
@@ -211,3 +217,7 @@ Priorität 3 – Qualität und Betrieb:
 - Browserprüfung der ausführlichen Luma-Seite erfolgreich: Portfolio, Profiltext, drei Pakete, Bewertung und Buchungskarte rendern ohne Fehleroverlay oder Konsolenfehler. Alle im sichtbaren Bereich benötigten Bilder laden; Merken- und Demo-Buchungseinstieg funktionieren.
 - Responsive Browserprüfung bei 390 × 844 Pixel erfolgreich: Überschrift und Anfrageaktion sind bedienbar, die Seite verursacht kein horizontales Überlaufen.
 - Fotografenprofil auf das Direktbuchungsprinzip umgestellt: Der Hochzeitstermin wird sofort geprüft, ein freier Termin wird bestätigt und führt ohne manuellen Anfrageprozess unmittelbar zum Buchungsschritt. TypeScript-Prüfung, Production-Build und Browserprüfung des vollständigen Ablaufs erfolgreich; keine Konsolenfehler, kein Fehleroverlay und kein horizontales Überlaufen.
+- Supabase-Migrationen `20260802131755_direct_booking_foundation.sql` und `20260802132322_optimize_direct_booking_policies.sql` im EU-Projekt angewendet. Tabellen `partner_packages` und `partner_bookings`, Ressourcenbezug im Partnerkalender, RLS, explizite Grants, Verfügbarkeits-RPC, Kalendersynchronisation und Doppelbuchungsschutz sind aktiv.
+- Transaktionaler Direktbuchungstest erfolgreich und vollständig zurückgerollt: freier Termin `true`, belegter Termin `false`, genau eine Buchung und ein synchroner Kalendereintrag; eine zweite überlappende Buchung wurde verhindert. Nach dem Rollback enthalten beide neuen Tabellen weiterhin 0 Datensätze.
+- Sicherheitsprüfung bestätigt: RLS ist auf beiden neuen Tabellen aktiv, `anon` darf die Verfügbarkeitsfunktion nicht ausführen, `authenticated` darf ausschließlich den vorgesehenen booleschen RPC nutzen. Der Security Advisor dokumentiert diesen bewusst privilegierten RPC sowie die bereits bekannten RSVP- und Passwortschutz-Hinweise.
+- Performance-Advisor nach Optimierung erneut geprüft: keine neuen fehlenden Fremdschlüsselindizes und keine mehrfachen permissiven Richtlinien im Direktbuchungsbereich; Hinweise auf unbenutzte neue Indizes sind bei noch leeren Tabellen erwartbar.
