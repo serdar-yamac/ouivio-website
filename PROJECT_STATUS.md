@@ -70,7 +70,8 @@ Technische Grundlage:
 - Partnerprofile unterscheiden zunächst Location, Fotografie und Catering; das Dashboard kann dadurch spezialisierte Funktionsbereiche anzeigen.
 - Fotografen besitzen im Bereich „Leistungen“ eine Portfolioverwaltung für JPG-, PNG- und WebP-Bilder bis 10 MB mit Titel und Bildstil.
 - Portfolio-Dateien liegen in einem privaten Supabase-Storage-Bucket. Metadaten sind per RLS geschützt; Partner können ausschließlich Dateien im eigenen Partnerordner lesen, hochladen, ändern oder löschen.
-- Partner können technisch veröffentlichbare Leistungspakete mit Dauer, Preis, Währung, Vor-/Nachbereitungszeit und einer buchbaren Ressource pflegen; die Kunden- und Partneroberflächen dafür folgen noch.
+- Partner verwalten im Bereich „Leistungen“ echte buchbare Pakete mit Preis, Währung, Dauer, Vor-/Nachbereitungszeit, Ressource, Beschreibung und enthaltenen Leistungen. Pakete können als Entwurf gespeichert, bearbeitet, veröffentlicht oder gelöscht werden.
+- Der Partner-Demomodus enthält drei Fotografie-Pakete einschließlich veröffentlichtem und unveröffentlichtem Zustand; Teständerungen bleiben wie alle Demo-Daten lokal im Browser.
 - Die Datenbankgrundlage für Direktbuchungen ist aktiv: Kundenbuchungen erzeugen ein 15-minütiges Zahlungsfenster, übernehmen Paketpreis und Dauer serverseitig und erscheinen automatisch als vorläufiger Eintrag im vorhandenen Partnerkalender.
 - Die Verfügbarkeitsprüfung berücksichtigt Ressourcen, Pufferzeiten, bestehende Kalendertermine und aktive Buchungen. Eine PostgreSQL-Ausschlussregel sowie transaktionale Ressourcensperren verhindern konkurrierende Doppelbuchungen auf Datenbankebene.
 
@@ -101,7 +102,7 @@ Technische Grundlage:
 - Frühere Browser-Demoaufgaben aus `ouivio.tasks.v2` werden bewusst nicht automatisch in einen echten Benutzerbereich übernommen.
 - Externe Kalender sind noch nicht produktiv mit Google Calendar oder Outlook verbunden.
 - Die Partner-Kalenderoberfläche und das Sync-Datenmodell sind fertig; echte Zwei-Wege-Synchronisation ist bis zur Einrichtung von Google-/Microsoft-OAuth und Apple iCalendar/CalDAV noch nicht aktiv.
-- Anbieterprofile, Detailansichten, Live-Verfügbarkeit und direkte Buchungen sind noch nicht produktiv umgesetzt.
+- Anbieterprofile, Detailansichten, Live-Verfügbarkeit und direkte Buchungen sind noch nicht produktiv umgesetzt. Partner-Leistungspakete können jedoch bereits sicher gepflegt und veröffentlicht werden.
 - Das Direktbuchungsschema und die atomare Belegungsprüfung sind aktiv; Checkout, Zahlungsbestätigung, automatische Ablaufverarbeitung der 15-minütigen Reservierung und produktive UI-Anbindung fehlen noch.
 - Einladungslinks verwenden vor dem Production-Rollout bewusst den stabilen Vercel-Feature-Branch-Alias; die endgültige Ouivio-Domain muss vor dem öffentlichen Start eingesetzt werden.
 - Gästelisten-Import, Haushalte, Begleitpersonen und serverseitiger automatischer Versand fehlen noch; persönliche Links können bereits über WhatsApp, Instagram oder das Standard-Mailprogramm geteilt werden.
@@ -165,6 +166,7 @@ Priorität 3 – Qualität und Betrieb:
 - Ouivio wird als direkt buchbarer Marketplace entwickelt: Kunden prüfen einen Termin gegen die echte Anbieterverfügbarkeit und buchen verfügbare Leistungen anschließend unmittelbar. Ein manueller Anfrageprozess ist nicht Teil des vorgesehenen Kernablaufs.
 - Buchbare Kapazität wird über partnerbezogene `resource_key`-Werte modelliert. Dadurch können einzelne Fotografen ein Hauptteam und größere Anbieter später mehrere unabhängig buchbare Teams, Räume oder Ressourcen anbieten.
 - Paketdaten und Preise werden beim Einfügen einer Buchung serverseitig aus dem veröffentlichten Paket übernommen. Browserwerte sind nicht vertrauenswürdig und können weder Preis, Dauer noch Partnerressource einer Buchung bestimmen.
+- Die Partner-Paketverwaltung verwendet ausschließlich die vorhandenen eigentümergebundenen RLS-Richtlinien. Der Rolle `authenticated` wurden gezielt nur die für diese Richtlinien benötigten Schreibrechte auf `partner_packages` erteilt; anonyme Nutzer erhalten keine Tabellenrechte.
 
 ## Letzte Prüfung
 
@@ -221,3 +223,7 @@ Priorität 3 – Qualität und Betrieb:
 - Transaktionaler Direktbuchungstest erfolgreich und vollständig zurückgerollt: freier Termin `true`, belegter Termin `false`, genau eine Buchung und ein synchroner Kalendereintrag; eine zweite überlappende Buchung wurde verhindert. Nach dem Rollback enthalten beide neuen Tabellen weiterhin 0 Datensätze.
 - Sicherheitsprüfung bestätigt: RLS ist auf beiden neuen Tabellen aktiv, `anon` darf die Verfügbarkeitsfunktion nicht ausführen, `authenticated` darf ausschließlich den vorgesehenen booleschen RPC nutzen. Der Security Advisor dokumentiert diesen bewusst privilegierten RPC sowie die bereits bekannten RSVP- und Passwortschutz-Hinweise.
 - Performance-Advisor nach Optimierung erneut geprüft: keine neuen fehlenden Fremdschlüsselindizes und keine mehrfachen permissiven Richtlinien im Direktbuchungsbereich; Hinweise auf unbenutzte neue Indizes sind bei noch leeren Tabellen erwartbar.
+- Migration `20260802140000_grant_partner_package_management.sql` im EU-Projekt ausgeführt und geprüft: authentifizierte Nutzer besitzen für die RLS-geschützte Paketverwaltung `SELECT`, `INSERT`, `UPDATE` und `DELETE`; anonymen Nutzern wurden keine Rechte erteilt.
+- TypeScript-Prüfung und optimierter Production-Build nach Ergänzung der Paketverwaltung erfolgreich; geschützte Startseitenkopien besitzen weiterhin den unveränderten SHA-256-Hash `72d42a351c4e435dcf6cd90efa37fb3e1291ae7979e01a78d03e8c31ff505288`.
+- Lokale Browserprüfung unter `/partner?demo=1` erfolgreich: drei Foto-Pakete, Entwurfs-/Veröffentlichungsstatus, Preis, Ressource und Puffer erscheinen korrekt; ein neues Demo-Paket lässt sich anlegen und bleibt erwartungsgemäß nur im Browserfenster gespeichert.
+- Supabase Security Advisor nach der gezielten Rechteergänzung geprüft: keine neue Warnung. Die weiterhin sechs Hinweise betreffen ausschließlich die bereits dokumentierten RSVP-/Verfügbarkeits-RPCs und den noch deaktivierten Schutz vor kompromittierten Passwörtern.
