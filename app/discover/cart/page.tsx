@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { isFeaturePreviewHost } from "../../../lib/feature-preview";
 import { getSupabaseClient } from "../../../lib/supabase";
 import styles from "./cart.module.css";
 
@@ -31,8 +32,9 @@ function CartDemoContent() {
   const formattedEndDate = new Date(`${endDate}T12:00:00`).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
 
   useEffect(() => {
+    const demoAllowed = isFeaturePreviewHost(window.location) && new URLSearchParams(window.location.search).get("demo") === "1";
     void getSupabaseClient().auth.getUser().then(({ data }) => {
-      if (!data.user) router.replace("/login");
+      if (!data.user && !demoAllowed) router.replace("/login");
       else setReady(true);
     });
   }, [router]);
