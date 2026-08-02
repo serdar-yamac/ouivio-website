@@ -72,6 +72,7 @@ Technische Grundlage:
 - Portfolio-Dateien liegen in einem privaten Supabase-Storage-Bucket. Metadaten sind per RLS geschützt; Partner können ausschließlich Dateien im eigenen Partnerordner lesen, hochladen, ändern oder löschen.
 - Partner verwalten im Bereich „Leistungen“ echte buchbare Pakete mit Preis, Währung, Dauer, Vor-/Nachbereitungszeit, Ressource, Beschreibung und enthaltenen Leistungen. Pakete können als Entwurf gespeichert, bearbeitet, veröffentlicht oder gelöscht werden.
 - Der Partner-Demomodus enthält drei Fotografie-Pakete einschließlich veröffentlichtem und unveröffentlichtem Zustand; Teständerungen bleiben wie alle Demo-Daten lokal im Browser.
+- Die Kundendemo führt vom ausgewählten Luma-Paket über eine Verfügbarkeitsbestätigung in einen eigenen Warenkorb unter `/discover/cart`. Termin, Paket, Dauer und Gesamtpreis werden dort nachvollziehbar zusammengefasst; der Checkout-Schritt erklärt die vorgesehene 15-minütige Reservierung und grenzt die Demo klar von einer Zahlung ab.
 - Die Datenbankgrundlage für Direktbuchungen ist aktiv: Kundenbuchungen erzeugen ein 15-minütiges Zahlungsfenster, übernehmen Paketpreis und Dauer serverseitig und erscheinen automatisch als vorläufiger Eintrag im vorhandenen Partnerkalender.
 - Die Verfügbarkeitsprüfung berücksichtigt Ressourcen, Pufferzeiten, bestehende Kalendertermine und aktive Buchungen. Eine PostgreSQL-Ausschlussregel sowie transaktionale Ressourcensperren verhindern konkurrierende Doppelbuchungen auf Datenbankebene.
 
@@ -103,7 +104,7 @@ Technische Grundlage:
 - Externe Kalender sind noch nicht produktiv mit Google Calendar oder Outlook verbunden.
 - Die Partner-Kalenderoberfläche und das Sync-Datenmodell sind fertig; echte Zwei-Wege-Synchronisation ist bis zur Einrichtung von Google-/Microsoft-OAuth und Apple iCalendar/CalDAV noch nicht aktiv.
 - Anbieterprofile, Detailansichten, Live-Verfügbarkeit und direkte Buchungen sind noch nicht produktiv umgesetzt. Partner-Leistungspakete können jedoch bereits sicher gepflegt und veröffentlicht werden.
-- Das Direktbuchungsschema und die atomare Belegungsprüfung sind aktiv; Checkout, Zahlungsbestätigung, automatische Ablaufverarbeitung der 15-minütigen Reservierung und produktive UI-Anbindung fehlen noch.
+- Das Direktbuchungsschema und die atomare Belegungsprüfung sind aktiv; ein bedienbarer Warenkorb-/Checkout-Demoablauf ist vorhanden. Zahlungsbestätigung, automatische Ablaufverarbeitung der 15-minütigen Reservierung und die produktive UI-Anbindung fehlen noch.
 - Einladungslinks verwenden vor dem Production-Rollout bewusst den stabilen Vercel-Feature-Branch-Alias; die endgültige Ouivio-Domain muss vor dem öffentlichen Start eingesetzt werden.
 - Gästelisten-Import, Haushalte, Begleitpersonen und serverseitiger automatischer Versand fehlen noch; persönliche Links können bereits über WhatsApp, Instagram oder das Standard-Mailprogramm geteilt werden.
 - Suche wirkt derzeit nur auf die lokale Anbieterliste.
@@ -227,3 +228,4 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Production-Build nach Ergänzung der Paketverwaltung erfolgreich; geschützte Startseitenkopien besitzen weiterhin den unveränderten SHA-256-Hash `72d42a351c4e435dcf6cd90efa37fb3e1291ae7979e01a78d03e8c31ff505288`.
 - Lokale Browserprüfung unter `/partner?demo=1` erfolgreich: drei Foto-Pakete, Entwurfs-/Veröffentlichungsstatus, Preis, Ressource und Puffer erscheinen korrekt; ein neues Demo-Paket lässt sich anlegen und bleibt erwartungsgemäß nur im Browserfenster gespeichert.
 - Supabase Security Advisor nach der gezielten Rechteergänzung geprüft: keine neue Warnung. Die weiterhin sechs Hinweise betreffen ausschließlich die bereits dokumentierten RSVP-/Verfügbarkeits-RPCs und den noch deaktivierten Schutz vor kompromittierten Passwörtern.
+- TypeScript-Prüfung und optimierter Production-Build nach Ergänzung von Warenkorb und Checkout-Demo erfolgreich; die neue Route `/discover/cart` wird statisch erzeugt und die geschützten Startseitenkopien bleiben bytegleich.

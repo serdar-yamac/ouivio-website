@@ -26,6 +26,8 @@ export default function LumaProfile() {
   const [saved, setSaved] = useState(false);
   const [bookingStep, setBookingStep] = useState<"idle" | "available" | "booking">("idle");
   const [selectedPackage, setSelectedPackage] = useState("Reportage");
+  const [weddingDate, setWeddingDate] = useState("2027-06-19");
+  const openCart = () => router.push(`/discover/cart?demo=1&package=${encodeURIComponent(selectedPackage)}&date=${weddingDate}`);
 
   useEffect(() => {
     if (!isPartnerDemoAllowed(window.location)) return router.replace("/login");
@@ -75,8 +77,7 @@ export default function LumaProfile() {
       <div className={styles.rating}><strong>4,9</strong><span>★★★★★</span><p>aus 38 Hochzeiten</p></div>
     </section>
 
-    <aside className={styles.inquiry} aria-label="Verfügbarkeit prüfen"><div><span>{bookingStep === "available" ? `${selectedPackage} verfügbar` : "Reportagen ab"}</span><strong>{bookingStep === "available" ? "19.06.2027" : "2.400 €"}</strong></div><label>Hochzeitstermin<input type="date" defaultValue="2027-06-19" onChange={() => setBookingStep("idle")}/></label><button onClick={() => setBookingStep(bookingStep === "available" ? "booking" : "available")}>{bookingStep === "available" ? "Jetzt direkt buchen" : "Verfügbarkeit prüfen"}</button><small>Sofortige Prüfung · keine Anfrage</small></aside>
-    {bookingStep === "available" && <div className={styles.toast} role="status"><strong>✓ Termin ist verfügbar.</strong> {selectedPackage} kann direkt gebucht werden.<button onClick={() => setBookingStep("booking")}>Jetzt buchen</button></div>}
-    {bookingStep === "booking" && <div className={styles.toast} role="status"><strong>Buchung wird vorbereitet.</strong> Im nächsten Schritt folgen Kundendaten und Zahlung. Demo – noch keine echte Buchung.<button onClick={() => setBookingStep("idle")}>Schließen</button></div>}
+    <aside className={styles.inquiry} aria-label="Verfügbarkeit prüfen"><div><span>{bookingStep === "available" ? `${selectedPackage} verfügbar` : "Reportagen ab"}</span><strong>{bookingStep === "available" ? weddingDate.split("-").reverse().join(".") : "2.400 €"}</strong></div><label>Hochzeitstermin<input type="date" value={weddingDate} onChange={(event) => { setWeddingDate(event.target.value); setBookingStep("idle"); }}/></label><button onClick={() => bookingStep === "available" ? openCart() : setBookingStep("available")}>{bookingStep === "available" ? "In den Warenkorb" : "Verfügbarkeit prüfen"}</button><small>Sofortige Prüfung · keine Anfrage</small></aside>
+    {bookingStep === "available" && <div className={styles.toast} role="status"><strong>✓ Termin ist verfügbar.</strong> {selectedPackage} kann direkt gebucht werden.<button onClick={openCart}>Zum Warenkorb</button></div>}
   </main>;
 }
