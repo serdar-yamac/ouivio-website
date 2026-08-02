@@ -6,6 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { bookingStartForDate, checkPartnerAvailability, isPackageId } from "../../../lib/booking-availability";
 import { isFeaturePreviewHost } from "../../../lib/feature-preview";
 import { getSupabaseClient } from "../../../lib/supabase";
+import { saveDemoBooking } from "../../../lib/demo-booking";
 import styles from "./cart.module.css";
 
 type CartItem = { id: string; category: string; name: string; price: number; currency: string; note: string };
@@ -35,6 +36,9 @@ function CartContent() {
   const [step, setStep] = useState<"cart" | "checkout" | "complete">("cart");
   const [availability, setAvailability] = useState<Record<string, AvailabilityState>>({});
   const [availabilityMessage, setAvailabilityMessage] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
 
   useEffect(() => {
     const demoAllowed = isFeaturePreviewHost(window.location) && new URLSearchParams(window.location.search).get("demo") === "1";
@@ -95,6 +99,16 @@ function CartContent() {
   const checking = Object.values(availability).includes("checking");
   const canContinue = items.length > 0 && items.every((item) => availability[item.id] === (hasLivePackages ? "available" : "demo"));
 
+  const completeDemoCheckout = () => {
+    if (!contactName.trim() || !contactEmail.trim() || !contactEmail.includes("@")) {
+      setCheckoutError("Bitte gebt einen Namen und eine gültige E-Mail-Adresse für die Demo ein.");
+      return;
+    }
+    saveDemoBooking({ createdAt: new Date().toISOString(), contactName: contactName.trim(), contactEmail: contactEmail.trim(), startDate, endDate, total, items: items.map(({ id, category, name, price, currency }) => ({ id, category, name, price, currency })) });
+    setCheckoutError("");
+    setStep("complete");
+  };
+
   if (!ready) return <main className={styles.loading}>Warenkorb wird geöffnet …</main>;
   if (!items.length) return <main className={styles.loading}>Keine buchbaren Leistungen gewählt. <Link href="/discover">Zur Auswahl</Link></main>;
 
@@ -104,9 +118,9 @@ function CartContent() {
       <main>
         <p className={styles.eyebrow}>Direktbuchung</p>
         <h1>{step === "cart" ? "Euer Warenkorb" : step === "checkout" ? "Checkout vorbereiten" : "Checkout gespeichert"}</h1>
-        {step === "complete" ? <section className={styles.success}><strong>✓</strong><h2>Checkout-Preview gespeichert.</h2><p>Es wurde weder bezahlt noch reserviert. Nach der endgültigen Live-Prüfung folgt als nächster Schritt die sichere Zahlung.</p><Link href="/discover">Weitere Anbieter entdecken</Link></section> : <>
+        {step === "complete" ? <section className={styles.success}><strong>✓</strong><h2>Demo-Planung gespeichert.</h2><p>Die Auswahl erscheint jetzt in eurer Demo-Planung und im Partner-Demokalender auf diesem Gerät. Es wurde weder bezahlt noch reserviert; echte Anbieter bleiben unverändert.</p><div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", marginTop: 20 }}><Link href="/dashboard">Meine Demo-Planung ansehen</Link><Link href="/partner?demo=1" style={{ background: "#1d1a18" }}>Partnerkalender ansehen</Link><Link href="/discover" style={{ background: "#fff", color: "#1d1a18", border: "1px solid #dcd5cc" }}>Weitere Anbieter entdecken</Link></div></section> : <>
           <section className={styles.items}>{items.map((item) => <article className={styles.item} key={item.id}><div><p>{item.category} · {item.name}</p><h2>{item.note}</h2><span>{formattedDate}{startDate !== endDate ? ` bis ${formattedEndDate}` : ""}</span>{availability[item.id] && <small>{availability[item.id] === "available" ? "✓ Zum gewünschten Termin verfügbar" : availability[item.id] === "unavailable" ? "Nicht verfügbar" : availability[item.id] === "demo" ? "Musterangebot · keine Live-Prüfung" : "Verfügbarkeit wird geprüft …"}</small>}</div><b>{money.format(item.price)}{item.category === "Catering" && <small> / Person</small>}</b></article>)}</section>
-          <section className={styles.info}><h2>{step === "cart" ? "Verfügbarkeit vor dem Checkout" : "Kontaktdaten & Zahlung"}</h2>{step === "cart" ? <><p>{hasLivePackages ? `Ouivio prüft die freigegebenen Ressourcen der Anbieter für ${bookingStartForDate(startDate).slice(0, 10)}. Private Kalenderdetails bleiben dabei geschützt.` : "Die ausgewählten Musterangebote führen durch den Ablauf, ohne eine Verfügbarkeit, Buchung oder Zahlung auszulösen."}</p><button onClick={checkAvailability} disabled={checking}>{checking ? "Verfügbarkeit wird geprüft …" : hasLivePackages ? "Verfügbarkeit prüfen" : "Demo-Verfügbarkeit anzeigen"}</button>{availabilityMessage && <p role="status">{availabilityMessage}</p>}{canContinue && <button onClick={() => setStep("checkout")}>Weiter zum Checkout</button>}</> : <><label>Name<input autoComplete="name" placeholder="Vor- und Nachname" /></label><label>E-Mail-Adresse<input autoComplete="email" placeholder="name@beispiel.de" type="email" /></label><p>Dies ist ein Checkout-Preview: Es wird keine Zahlung ausgelöst und keine Reservierung angelegt. Preise und Verfügbarkeit werden vor einer späteren Buchung serverseitig bestätigt.</p><button onClick={() => setStep("complete")}>Checkout-Preview abschließen</button></>}</section>
+          <section className={styles.info}><h2>{step === "cart" ? "Verfügbarkeit vor dem Checkout" : "Kontaktdaten & Demo-Übergabe"}</h2>{step === "cart" ? <><p>{hasLivePackages ? `Ouivio prüft die freigegebenen Ressourcen der Anbieter für ${bookingStartForDate(startDate).slice(0, 10)}. Private Kalenderdetails bleiben dabei geschützt.` : "Die ausgewählten Musterangebote führen durch den Ablauf, ohne eine Verfügbarkeit, Buchung oder Zahlung auszulösen."}</p><button onClick={checkAvailability} disabled={checking}>{checking ? "Verfügbarkeit wird geprüft …" : hasLivePackages ? "Verfügbarkeit prüfen" : "Demo-Verfügbarkeit anzeigen"}</button>{availabilityMessage && <p role="status">{availabilityMessage}</p>}{canContinue && <button onClick={() => setStep("checkout")}>Weiter zum Checkout</button>}</> : <><label>Name<input autoComplete="name" onChange={(event) => setContactName(event.target.value)} placeholder="Vor- und Nachname" value={contactName} /></label><label>E-Mail-Adresse<input autoComplete="email" onChange={(event) => setContactEmail(event.target.value)} placeholder="name@beispiel.de" type="email" value={contactEmail} /></label><p>Ihr testet den vollständigen Ablauf: Die Auswahl wird anschließend sichtbar in die Kundenplanung und den Partner-Demokalender übernommen. Es gibt keine Zahlung, keine Reservierung und keinen Eintrag in echte Anbieter-Kalender.</p>{checkoutError && <p style={{ color: "#b42318", fontWeight: 700 }} role="alert">{checkoutError}</p>}<button onClick={completeDemoCheckout}>Demo-Planung speichern</button></>}</section>
         </>}
       </main>
       <aside><small>Zusammenfassung</small><div><span>Leistungen</span><strong>{items.length} ausgewählt</strong></div><div><span>Hochzeitstermin</span><strong>{formattedDate}</strong></div><div><span>Gesamt ab</span><strong>{money.format(total)}{items.some((item) => item.category === "Catering") ? " + Catering pro Person" : ""}</strong></div><p>{hasLivePackages ? "Verfügbarkeit wird in Echtzeit gegen die Partnerressourcen geprüft. Eine Zahlung oder Reservierung entsteht erst im späteren, verbindlichen Buchungsschritt." : "Keine versteckten Gebühren. Dieser Preview-Checkout speichert noch keine Buchung und keine Zahlung."}</p></aside>
