@@ -71,12 +71,14 @@ Technische Grundlage:
 - Fotografen besitzen im Bereich „Leistungen“ eine Portfolioverwaltung für JPG-, PNG- und WebP-Bilder bis 10 MB mit Titel und Bildstil.
 - Portfolio-Dateien liegen in einem privaten Supabase-Storage-Bucket. Metadaten sind per RLS geschützt; Partner können ausschließlich Dateien im eigenen Partnerordner lesen, hochladen, ändern oder löschen.
 - Partner verwalten im Bereich „Leistungen“ echte buchbare Pakete mit Preis, Währung, Dauer, Vor-/Nachbereitungszeit, Ressource, Beschreibung und enthaltenen Leistungen. Pakete können als Entwurf gespeichert, bearbeitet, veröffentlicht oder gelöscht werden.
+- Jedes Partnerpaket ist einem konkreten Leistungsbereich (Location, Catering oder Fotografie) zugeordnet. Bei mehreren aktiven Bereichen wählen Partner den Bereich pro Paket; damit können spätere Kundenkombinationen und Verfügbarkeitsprüfungen getrennt erfolgen.
 - Der Partner-Demomodus enthält drei Fotografie-Pakete einschließlich veröffentlichtem und unveröffentlichtem Zustand; Teständerungen bleiben wie alle Demo-Daten lokal im Browser.
 - Die Kundendemo führt vom ausgewählten Luma-Paket über eine Verfügbarkeitsbestätigung in einen eigenen Warenkorb unter `/discover/cart`. Termin, Paket, Dauer und Gesamtpreis werden dort nachvollziehbar zusammengefasst; der Checkout-Schritt erklärt die vorgesehene 15-minütige Reservierung und grenzt die Demo klar von einer Zahlung ab.
 - Im Fotografenprofil ist der Warenkorb dauerhaft sichtbar; nach der Verfügbarkeitsprüfung übernimmt er das aktuell gewählte Paket und den Termin.
 - Auch die Kunden-Anbieterübersicht besitzt oben rechts einen permanent erreichbaren Warenkorb-Einstieg.
 - Das Partnerprofil bietet eine professionelle Mehrbereichs-Konfiguration: eigenständige Karten für Location, Catering und Fotografie mit Aktiv-Status, Buchungsmodell, Externanbieter-Regel und speicherbarem Kundenhinweis.
 - Die Datenbankgrundlage für Direktbuchungen ist aktiv: Kundenbuchungen erzeugen ein 15-minütiges Zahlungsfenster, übernehmen Paketpreis und Dauer serverseitig und erscheinen automatisch als vorläufiger Eintrag im vorhandenen Partnerkalender.
+- Die Datenbankgrundlage enthält pro Paket einen `service_type`-Wert mit zulässigen Bereichen Location, Catering oder Fotografie; der bestehende Ressourcen-, RLS- und Doppelbuchungsschutz bleibt unverändert.
 - Die Verfügbarkeitsprüfung berücksichtigt Ressourcen, Pufferzeiten, bestehende Kalendertermine und aktive Buchungen. Eine PostgreSQL-Ausschlussregel sowie transaktionale Ressourcensperren verhindern konkurrierende Doppelbuchungen auf Datenbankebene.
 
 ### Deployment
@@ -172,6 +174,7 @@ Priorität 3 – Qualität und Betrieb:
 - Paketdaten und Preise werden beim Einfügen einer Buchung serverseitig aus dem veröffentlichten Paket übernommen. Browserwerte sind nicht vertrauenswürdig und können weder Preis, Dauer noch Partnerressource einer Buchung bestimmen.
 - Die Partner-Paketverwaltung verwendet ausschließlich die vorhandenen eigentümergebundenen RLS-Richtlinien. Der Rolle `authenticated` wurden gezielt nur die für diese Richtlinien benötigten Schreibrechte auf `partner_packages` erteilt; anonyme Nutzer erhalten keine Tabellenrechte.
 - Anbieter entscheiden je Leistungsbereich autonom zwischen Einzelbuchung, Add-on, Bundle und Komplettpaket sowie über die Zulässigkeit externer Ergänzungen. So können Kunden einzelne Leistungen kombinieren, während Anbieter ihre Angebotsgrenzen verbindlich festlegen.
+- Buchbare Pakete werden unabhängig von der ursprünglichen Hauptkategorie eines Partnerkontos pro Leistungsbereich geführt. Dadurch kann ein Mehrbereichsanbieter ein Location-Paket und ergänzende Catering- oder Fotografie-Pakete getrennt veröffentlichen und verwalten.
 
 ## Letzte Prüfung
 
@@ -233,3 +236,6 @@ Priorität 3 – Qualität und Betrieb:
 - Lokale Browserprüfung unter `/partner?demo=1` erfolgreich: drei Foto-Pakete, Entwurfs-/Veröffentlichungsstatus, Preis, Ressource und Puffer erscheinen korrekt; ein neues Demo-Paket lässt sich anlegen und bleibt erwartungsgemäß nur im Browserfenster gespeichert.
 - Supabase Security Advisor nach der gezielten Rechteergänzung geprüft: keine neue Warnung. Die weiterhin sechs Hinweise betreffen ausschließlich die bereits dokumentierten RSVP-/Verfügbarkeits-RPCs und den noch deaktivierten Schutz vor kompromittierten Passwörtern.
 - TypeScript-Prüfung und optimierter Production-Build nach Ergänzung von Warenkorb und Checkout-Demo erfolgreich; die neue Route `/discover/cart` wird statisch erzeugt und die geschützten Startseitenkopien bleiben bytegleich.
+- Migration `20260802153000_link_packages_to_service_areas.sql` im Supabase-Projekt ausgeführt und geprüft: `partner_packages.service_type` ist nicht nullable, auf die drei vorgesehenen Bereiche begrenzt und für Mehrbereichsabfragen indiziert.
+- TypeScript-Prüfung und optimierter Production-Build nach der Paketzuordnung zu Leistungsbereichen erfolgreich; `index.html` und `public/index.html` behalten beide den SHA-256-Hash `72d42a351c4e435dcf6cd90efa37fb3e1291ae7979e01a78d03e8c31ff505288`.
+- Supabase Security Advisor nach der Migration geprüft: keine neue Warnung; die weiterhin bekannten Hinweise betreffen ausschließlich die absichtlich begrenzten RSVP-/Verfügbarkeitsfunktionen und den noch deaktivierten Schutz vor kompromittierten Passwörtern.
