@@ -1,5 +1,6 @@
 import type { PartnerCalendarEvent } from "./partner-calendar";
 import { isFeaturePreviewHost } from "./feature-preview";
+import { readDemoBooking } from "./demo-booking";
 
 export function isPartnerDemoAllowed(location: Pick<Location, "hostname" | "search">) {
   return isFeaturePreviewHost(location) && new URLSearchParams(location.search).get("demo") === "1";
@@ -20,4 +21,13 @@ export function createPartnerDemoEvents(now = new Date()): PartnerCalendarEvent[
     { id: "demo-booking", partnerId: "demo", title: "Hochzeit – Gut Sonnenhof", startsAt: booking.start, endsAt: booking.end, location: "Gut Sonnenhof", notes: "Demo-Buchung", type: "booking", status: "confirmed", source: "ouivio" },
     { id: "demo-blocked", partnerId: "demo", title: "Nicht verfügbar", startsAt: blocked.start, endsAt: blocked.end, location: "", notes: "Demo-Sperrzeit", type: "blocked", status: "confirmed", source: "ouivio" },
   ];
+}
+
+export function getCustomerDemoBookingEvent(): PartnerCalendarEvent | null {
+  const booking = readDemoBooking();
+  if (!booking) return null;
+  const start = new Date(`${booking.startDate}T14:00:00`);
+  const end = new Date(`${booking.endDate}T20:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  return { id: "customer-demo-booking", partnerId: "demo", title: `Neue Demo-Buchung · ${booking.contactName}`, startsAt: start.toISOString(), endsAt: end.toISOString(), location: booking.items.map((item) => item.name.split(" · ")[0]).join(", "), notes: `Demo-Übergabe: ${booking.items.map((item) => item.category).join(", ")}. Keine echte Reservierung.`, type: "booking", status: "tentative", source: "ouivio" };
 }
