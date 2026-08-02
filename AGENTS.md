@@ -4,11 +4,11 @@ Diese Datei und `PROJECT_STATUS.md` müssen vor jeder Änderung am Projekt volls
 
 ## Verbindliche Designvorgaben
 
-- Die bestehende Original-HTML-Startseite darf gestalterisch nicht verändert werden.
+- `main` und die dort veröffentlichte Original-HTML-Startseite bleiben unangetastet, bis der Benutzer eine Production-Freigabe erteilt.
 - Die rote handschriftliche Ouivio-Wortmarke darf weder ersetzt noch neu gezeichnet, umgefärbt, beschnitten, verzerrt oder typografisch nachgebaut werden.
-- Als geschützte Referenz gilt die aktuell ausgelieferte Startseite in `public/index.html`, einschließlich ihrer eingebetteten Wortmarke, Gestaltung, Typografie, Farben, Abstände, Inhalte und responsiven Darstellung.
-- `index.html` ist ebenfalls als vorhandene Original-HTML-Quelle zu bewahren. Änderungen an den geschützten HTML-Dateien sind nur zulässig, wenn der Benutzer sie ausdrücklich und konkret anordnet. Eine allgemeine Aufforderung zur Weiterentwicklung von Ouivio reicht dafür nicht aus.
-- Neue Produktfunktionen werden im bestehenden Dashboard unter `app/dashboard/page.tsx` und den zugehörigen Dashboard-Styles entwickelt. Die Startseite bleibt davon getrennt.
+- Auf `feat/ouivio-core-foundation` darf das gesamte Projekt – einschließlich der Startseite – weiterentwickelt werden. Dabei bleibt die rote handschriftliche Ouivio-Wortmarke unverändert, sofern der Benutzer nichts anderes ausdrücklich anordnet.
+- `index.html` und `public/index.html` sind bei Startseitenänderungen synchron zu halten.
+- Neue Produktfunktionen können im Dashboard und in der Startseite des Entwicklungsbranchs entwickelt werden; `main` bleibt davon getrennt.
 
 ## Arbeitsweise
 
