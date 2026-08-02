@@ -41,7 +41,7 @@ function CartContent() {
     const load = async () => {
       const supabase = getSupabaseClient();
       const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user && !demoAllowed) { router.replace("/login"); return; }
+      if (!userData.user && !demoAllowed) { router.replace("/login?intent=customer"); return; }
 
       if (!packageIds.length) {
         setItems(demoItemIds.map((id) => demoItems[id]));
