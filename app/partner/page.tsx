@@ -61,7 +61,7 @@ export default function PartnerDashboard() {
         }
         const supabase = getSupabaseClient();
         const { data } = await supabase.auth.getUser();
-        if (!data.user) return router.replace("/login");
+        if (!data.user) return router.replace("/login?intent=partner");
         const account = await ensureAccountProfile(data.user);
         if (account.type !== "partner") return router.replace("/dashboard");
         const partner = await ensurePartnerProfile(data.user.id, account.displayName);
@@ -128,7 +128,7 @@ export default function PartnerDashboard() {
     } catch { setError("Der Termin konnte nicht gespeichert werden."); } finally { setSaving(false); }
   };
 
-  const signOut = async () => { await getSupabaseClient().auth.signOut(); router.replace("/login"); };
+  const signOut = async () => { await getSupabaseClient().auth.signOut(); router.replace("/access"); };
   if (!ready) return <main className={styles.loading}><b>Ouivio.</b><p>{error || "Partnerbereich wird geöffnet …"}</p></main>;
 
   return <main className={styles.shell}>
