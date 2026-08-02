@@ -1,6 +1,6 @@
 # Ouivio – Projektstatus
 
-Stand: 1. August 2026
+Stand: 2. August 2026
 
 Branch: `feat/ouivio-core-foundation`
 
@@ -55,7 +55,7 @@ Technische Grundlage:
 - Gästeanzahl, Zusagen und offene Antworten werden aus den echten Supabase-Daten auf der Übersicht berechnet.
 - Rücklink vom Dashboard zur Startseite ist vorhanden.
 - Das Dashboard ist für schmale Smartphones optimiert: sichere untere Navigation, überlauffreier Kopfbereich, kompaktere Karten und gut erreichbare Sharing-Aktionen mit mindestens 44 Pixel hohen Touch-Zielen.
-- Supabase-E-Mail-/Passwort-Registrierung und Anmeldung stehen unter `/login` bereit.
+- Die Anmeldung für bereits freigeschaltete Kunden- und Partnerkonten steht unter `/login` bereit; die öffentliche Registrierung ist während der Entwicklungsphase in der Oberfläche deaktiviert.
 - Nicht angemeldete Dashboard-Aufrufe werden zur Anmeldung weitergeleitet; Sitzungen werden automatisch gespeichert und erneuert.
 - Nach der ersten bestätigten Anmeldung wird automatisch ein persönlicher Hochzeitsbereich mit Eigentümer-Mitgliedschaft angelegt.
 - Abmeldung ist direkt im Dashboard möglich.
@@ -70,6 +70,7 @@ Technische Grundlage:
 - Production-Deployment für `main` ist erreichbar und im Zustand `READY`.
 - Für `feat/ouivio-core-foundation` existieren erfolgreiche Preview-Deployments.
 - Frühere fehlgeschlagene Preview-Builds wurden durch spätere erfolgreiche Builds abgelöst.
+- Pre-Launch-Trennung: `main` dient ausschließlich der kontrollierten öffentlichen Produktion; neue Funktionen werden auf `feat/ouivio-core-foundation` entwickelt und erst nach ausdrücklicher Freigabe nach `main` übernommen.
 
 ### Datenbankgrundlage
 
@@ -96,6 +97,7 @@ Technische Grundlage:
 - Suche wirkt derzeit nur auf die lokale Anbieterliste.
 - Benachrichtigungen, Nachrichten und Mehrbenutzer-Zusammenarbeit fehlen.
 - Es gibt noch keine automatisierten Tests.
+- Die Registrierungsoberfläche ist im Pre-Launch-Modus entfernt. Die Deaktivierung der Supabase-Selbstregistrierung auf Projektebene muss separat in den Auth-Einstellungen verifiziert werden.
 - `npm audit --omit=dev` meldet drei hohe transitive Hinweise über die bestehende Next.js-15-Abhängigkeit (`postcss` und `sharp`); eine separat geprüfte Next.js-Major-Aktualisierung ist offen.
 
 ## Offene Aufgaben
@@ -129,6 +131,8 @@ Priorität 3 – Qualität und Betrieb:
 - Die rote handschriftliche Ouivio-Wortmarke ist unveränderlich.
 - Neue Funktionen entstehen im bestehenden Dashboard; Startseite und Dashboard bleiben technisch und gestalterisch getrennt.
 - Laufende Kernentwicklung erfolgt auf `feat/ouivio-core-foundation`.
+- Während der Pre-Launch-Phase bleibt nur die Startseite allgemein öffentlich sichtbar. Der Dashboard-Link führt zur Anmeldung; neue Kunden- und Partnerkonten können über die Ouivio-Oberfläche nicht angelegt werden.
+- Produktionsveröffentlichungen erfolgen ausschließlich nach ausdrücklicher Freigabe. Ein Push auf den Entwicklungsbranch ist keine Freigabe für `main` oder `www.ouivio.com`.
 - `AGENTS.md` und `PROJECT_STATUS.md` sind vor jeder Änderung zu lesen.
 - `PROJECT_STATUS.md` wird nach jedem größeren Arbeitsschritt aktualisiert.
 - Beauftragte Entwicklungsänderungen werden nach erfolgreicher Prüfung automatisch auf `feat/ouivio-core-foundation` committed und gepusht; diese Freigabe umfasst weder `main` noch Production-Deployments oder andere externe Änderungen.
