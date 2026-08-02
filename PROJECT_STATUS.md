@@ -31,7 +31,7 @@ Technische Grundlage:
 - Die öffentliche Startseite ist zusätzlich für 320–430 Pixel breite Smartphone-Hochformate optimiert: skalierende Überschriften, einspaltige Hauptaktionen, kompakter Showcase sowie überlauffreie Karten und Formulare.
 - Im mobilen Hero erscheint die Ouivio-Vorschau vor dem Text; die Verfügbarkeits-Kalenderkarte bleibt auch im Hochformat sichtbar und passt vollständig in die Bildschirmbreite.
 - Rote handschriftliche Ouivio-Wortmarke ist als eingebettetes Original-Asset vorhanden.
-- Link zum Dashboard unter `/dashboard` ist integriert.
+- Link zum Dashboard unter `/dashboard` ist integriert. Auf dem Entwicklungsbranch führt der zweite Hero-Button zusätzlich direkt zur öffentlichen Anbietersuche unter `/discover`; Gestaltung und Wortmarke bleiben unverändert.
 
 ### Dashboard
 
@@ -187,6 +187,7 @@ Priorität 3 – Qualität und Betrieb:
 - Die Kundenregistrierung wird nur auf localhost und dem festen `feat/ouivio-core-foundation`-Preview angezeigt. Die produktive Oberfläche bleibt im Pre-Launch-Zustand ohne Registrierungsoption; das bestehende Supabase-Projekt und dessen globale Auth-Einstellungen werden dafür nicht verändert.
 - Checkout wird in Stufen entwickelt: Der aktuelle Preview darf keine Zahlung oder Terminreservierung auslösen. Erst nach der verbindlichen Mehranbieter-Verfügbarkeitsprüfung wird eine Zahlungsintegration ausgewählt und eingebunden.
 - Öffentliche Angebotsdaten werden ausschließlich über `search_published_partner_packages` bereitgestellt. Die absichtlich anonyme, `SECURITY DEFINER`-basierte Funktion gibt nur veröffentlichte Pakete und aktive, vom Partner freigegebene Leistungsbereiche zurück; sie verwendet einen leeren Suchpfad, besitzt explizite Ausführungsrechte und öffnet keine Tabellenrechte.
+- Der Benutzer hat die Weiterentwicklung des gesamten Projekts auf `feat/ouivio-core-foundation` ausdrücklich freigegeben. `main` bleibt unverändert; die handschriftliche Ouivio-Wortmarke bleibt auch auf dem Entwicklungsbranch geschützt. Startseitenquellen werden dort stets in `index.html` und `public/index.html` synchron gehalten.
 
 ## Letzte Prüfung
 
@@ -261,3 +262,4 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Production-Build nach der Katalog- und Verfügbarkeitsanbindung erfolgreich; die vorhandenen CSS-Autoprefixer-Hinweise sind unverändert. Lokaler Dev-Serverstart war in dieser Desktop-Sandbox wegen einer gesperrten Netzwerkbindung (`EPERM`) nicht möglich.
 - Geschützte Startseitenkopien erneut per SHA-256 geprüft: beide besitzen unverändert `72d42a351c4e435dcf6cd90efa37fb3e1291ae7979e01a78d03e8c31ff505288`.
 - Supabase Security Advisor geprüft: die neue Katalogfunktion erscheint erwartungsgemäß als dokumentierter Hinweis für eine bewusst anonyme `SECURITY DEFINER`-Funktion; weitere Hinweise sind die bekannten RSVP-/Verfügbarkeitsfunktionen und der deaktivierte Schutz vor kompromittierten Passwörtern.
+- Startseite im Entwicklungsbranch funktional mit der Kundensuche verbunden: Der vorhandene sekundäre Hero-Button führt ohne CSS- oder Wortmarkenänderung nach `/discover`; `index.html` und `public/index.html` sind dabei inhaltlich synchron.
