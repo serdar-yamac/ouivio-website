@@ -78,6 +78,7 @@ Technische Grundlage:
 - Im Fotografenprofil ist der Warenkorb dauerhaft sichtbar; nach der Verfügbarkeitsprüfung übernimmt er das aktuell gewählte Paket und den Termin.
 - Auch die Kunden-Anbieterübersicht besitzt oben rechts einen permanent erreichbaren Warenkorb-Einstieg.
 - Die öffentliche Kundenansicht unter `/discover` bietet eine Suchgrundlage mit Hochzeitstermin, Wochentag, Ort, Umkreis sowie wählbaren Leistungen (Location, Catering, Fotografie oder Komplettpaket). Ergebnisse werden aktuell anhand klar gekennzeichneter Entwicklungsanbieter gefiltert; Merken und Warenkorb verlangen erst danach ein Konto.
+- Der Ort ist in der Entwicklungsansicht als Auswahlliste mit „Alle Städte“, Köln, Düsseldorf und Bonn umgesetzt; damit lassen sich die vorhandenen Testdaten ohne Tippfehler vergleichen.
 - Kunden können in der öffentlichen Suche mehrere Demo-Anbieter zunächst unverbindlich in einer gemeinsamen Auswahl zusammenstellen. Erst das Übernehmen dieser Auswahl in den Warenkorb oder das Merken eines Profils fordert eine Anmeldung an; die Auswahl selbst ist bewusst nur lokal und nicht persistent.
 - Im Feature-Preview und auf localhost können Kunden ein eigenes E-Mail-/Passwortkonto anlegen. Die Anmeldung danach erzeugt wie bestehende Kundenkonten einen persönlichen Hochzeitsbereich; Partnerregistrierungen bleiben geschlossen.
 - Angemeldete Kunden gelangen von ihrer Mehranbieter-Auswahl in einen gemeinsamen Checkout-Preview. Er fasst Location, Fotografie und Catering zusammen, zeigt Preise und Zeitraum und führt durch Kontaktdaten sowie Abschluss, löst aber ausdrücklich weder Zahlung noch Reservierung aus.
@@ -272,3 +273,4 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Production-Build nach Ergänzung des Partner-Onboardings erfolgreich; bestehende CSS-Autoprefixer-Hinweise sind unverändert. Die neuen `/login`- und `/partner`-Bundles werden erfolgreich erzeugt.
 - Migration `20260802190000_public_catalog_date_availability.sql` im EU-Entwicklungsprojekt angewendet und geprüft: die Katalogfunktion akzeptiert den Wunschzeitpunkt und filtert belegte Ressourcen ohne zusätzliche Dateneinsicht.
 - Zehn eindeutig markierte Demo-Partner, zehn veröffentlichte Pakete und zehn unterschiedliche Demo-Belegungsfenster erstellt und geprüft. Für Köln liefert die öffentliche Katalogfunktion am 19.06.2027 zwei freie Angebote, am 20.06.2027 vier – die Filterung reagiert damit auf den gewählten Termin.
+- TypeScript-Prüfung und optimierter Production-Build nach Umstellung der Ortsauswahl auf eine Auswahlliste erfolgreich.
