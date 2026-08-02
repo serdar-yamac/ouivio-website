@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [partnerDemoAvailable, setPartnerDemoAvailable] = useState(false);
   const [registrationAvailable, setRegistrationAvailable] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [accessIntent, setAccessIntent] = useState<"customer" | "partner" | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [accountType, setAccountType] = useState<"customer" | "partner">("customer");
   const [city, setCity] = useState("");
@@ -35,6 +36,7 @@ export default function LoginPage() {
     const intent = demoUrl.searchParams.get("intent");
     if (previewRegistrationAvailable && (intent === "customer" || intent === "partner")) {
       setAccountType(intent);
+      setAccessIntent(intent);
       setMode("signup");
     }
     if (demoUrl.searchParams.get("confirmed") === "1") {
@@ -107,7 +109,7 @@ export default function LoginPage() {
         {registrationAvailable ? <div className={styles.previewNotice} role="status"><strong>Entwicklungs-Preview</strong><span>Kunden- und Partnerregistrierung sind hier zum Testen geöffnet. Sie bleiben auf localhost und dem Entwicklungsbranch begrenzt.</span></div> : <div className={styles.prelaunch} role="status"><strong>Registrierung noch nicht geöffnet</strong><span>Neue Kunden- und Partnerkonten werden erst zum offiziellen Start freigeschaltet.</span></div>}
 
         <form className={styles.form} onSubmit={submit}>
-          {mode === "signup" && <><div className={styles.accountTypeChoice} role="group" aria-label="Kontoart"><button aria-pressed={accountType === "customer"} onClick={() => setAccountType("customer")} type="button"><strong>Ich plane eine Hochzeit</strong><span>Kundenkonto</span></button><button aria-pressed={accountType === "partner"} onClick={() => setAccountType("partner")} type="button"><strong>Ich biete Leistungen an</strong><span>Partnerkonto</span></button></div><label>{accountType === "partner" ? "Unternehmensname" : "Eure Namen"}<input autoComplete="name" onChange={(event) => setDisplayName(event.target.value)} placeholder={accountType === "partner" ? "z. B. Gut Sonnenhof" : "z. B. Emma & Noah"} required value={displayName}/></label>{accountType === "partner" && <><label>Ort<input autoComplete="address-level2" onChange={(event) => setCity(event.target.value)} placeholder="z. B. Köln" required value={city}/></label><label>Anbieterart<select onChange={(event) => setCategory(event.target.value as PartnerCategory)} value={category}><option value="location">Location</option><option value="photography">Fotografie</option><option value="catering">Catering</option></select></label></>}</>}
+          {mode === "signup" && <>{!accessIntent && <div className={styles.accountTypeChoice} role="group" aria-label="Kontoart"><button aria-pressed={accountType === "customer"} onClick={() => setAccountType("customer")} type="button"><strong>Ich plane eine Hochzeit</strong><span>Kundenkonto</span></button><button aria-pressed={accountType === "partner"} onClick={() => setAccountType("partner")} type="button"><strong>Ich biete Leistungen an</strong><span>Partnerkonto</span></button></div>}<label>{accountType === "partner" ? "Unternehmensname" : "Eure Namen"}<input autoComplete="name" onChange={(event) => setDisplayName(event.target.value)} placeholder={accountType === "partner" ? "z. B. Gut Sonnenhof" : "z. B. Emma & Noah"} required value={displayName}/></label>{accountType === "partner" && <><label>Ort<input autoComplete="address-level2" onChange={(event) => setCity(event.target.value)} placeholder="z. B. Köln" required value={city}/></label><label>Anbieterart<select onChange={(event) => setCategory(event.target.value as PartnerCategory)} value={category}><option value="location">Location</option><option value="photography">Fotografie</option><option value="catering">Catering</option></select></label></>}</>}
           <label>E-Mail-Adresse<input autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder="ihr@beispiel.de" required type="email" value={email}/></label>
           <label>Passwort<input autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password}/></label>
           {error && <p className={styles.error} role="alert">{error}</p>}
