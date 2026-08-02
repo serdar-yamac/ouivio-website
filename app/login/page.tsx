@@ -31,7 +31,7 @@ export default function LoginPage() {
     setRegistrationAvailable(previewRegistrationAvailable);
     const intent = demoUrl.searchParams.get("intent");
     if (intent === "partner") {
-      window.location.replace("/#partner");
+      window.location.replace("/index.html#partner");
       return;
     }
     if (previewRegistrationAvailable && intent === "customer") {
