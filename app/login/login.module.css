@@ -6,8 +6,9 @@
 .panel h1 { max-width: 520px; margin: 0; font-size: clamp(42px, 5vw, 68px); line-height: .98; letter-spacing: -.055em; }
 .intro { max-width: 520px; color: #766e6a; font-size: 17px; line-height: 1.65; margin: 24px 0 30px; }
 .prelaunch { display: grid; gap: 5px; max-width: 520px; padding: 15px 17px; border: 1px solid #eaded9; border-radius: 15px; background: rgba(255,255,255,.72); }
-.prelaunch strong { color: #171414; font-size: 14px; }
-.prelaunch span { color: #766e6a; font-size: 12px; line-height: 1.5; }
+.previewNotice { display: grid; gap: 5px; max-width: 520px; padding: 15px 17px; border: 1px solid #f0ced3; border-radius: 15px; background: #fff7f7; }
+.prelaunch strong, .previewNotice strong { color: #171414; font-size: 14px; }
+.prelaunch span, .previewNotice span { color: #766e6a; font-size: 12px; line-height: 1.5; }
 .form { display: grid; gap: 16px; margin-top: 26px; }
 .form label { display: grid; gap: 7px; color: #766e6a; font-size: 12px; font-weight: 750; }
 .form input { width: 100%; border: 1px solid #e9e2dd; border-radius: 14px; background: #fff; padding: 14px 15px; color: #171414; }
@@ -18,6 +19,7 @@
 .error { background: #fff0f2; color: #a90e25; }
 .success { background: #e6f5ed; color: #217a50; }
 .back { display: inline-block; color: #766e6a; margin-top: 25px; font-size: 13px; text-decoration: none; }
+.modeSwitch { display: block; border: 0; background: transparent; color: #a90e25; font: inherit; font-size: 13px; font-weight: 750; padding: 0; margin-top: 22px; cursor: pointer; }
 .promise { margin: 20px; border-radius: 34px; padding: 52px; background: linear-gradient(145deg,#ef213e,#a90e25); color: #fff; display: flex; flex-direction: column; justify-content: flex-end; box-shadow: 0 28px 75px rgba(145,0,12,.2); overflow: hidden; position: relative; }
 .promise:before { content: ""; position: absolute; width: 470px; height: 470px; border: 86px solid rgba(255,255,255,.06); border-radius: 50%; right: -210px; top: -210px; }
 .promise p, .promise strong, .promise span { position: relative; z-index: 1; }
