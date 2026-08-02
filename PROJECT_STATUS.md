@@ -78,6 +78,7 @@ Technische Grundlage:
 - Auch die Kunden-Anbieterübersicht besitzt oben rechts einen permanent erreichbaren Warenkorb-Einstieg.
 - Die öffentliche Kundenansicht unter `/discover` bietet eine Suchgrundlage mit Hochzeitstermin, Wochentag, Ort, Umkreis sowie wählbaren Leistungen (Location, Catering, Fotografie oder Komplettpaket). Ergebnisse werden aktuell anhand klar gekennzeichneter Entwicklungsanbieter gefiltert; Merken und Warenkorb verlangen erst danach ein Konto.
 - Kunden können in der öffentlichen Suche mehrere Demo-Anbieter zunächst unverbindlich in einer gemeinsamen Auswahl zusammenstellen. Erst das Übernehmen dieser Auswahl in den Warenkorb oder das Merken eines Profils fordert eine Anmeldung an; die Auswahl selbst ist bewusst nur lokal und nicht persistent.
+- Im Feature-Preview und auf localhost können Kunden ein eigenes E-Mail-/Passwortkonto anlegen. Die Anmeldung danach erzeugt wie bestehende Kundenkonten einen persönlichen Hochzeitsbereich; Partnerregistrierungen bleiben geschlossen.
 - Das Partnerprofil bietet eine professionelle Mehrbereichs-Konfiguration: eigenständige Karten für Location, Catering und Fotografie mit Aktiv-Status, Buchungsmodell, Externanbieter-Regel und speicherbarem Kundenhinweis.
 - Die Datenbankgrundlage für Direktbuchungen ist aktiv: Kundenbuchungen erzeugen ein 15-minütiges Zahlungsfenster, übernehmen Paketpreis und Dauer serverseitig und erscheinen automatisch als vorläufiger Eintrag im vorhandenen Partnerkalender.
 - Die Datenbankgrundlage enthält pro Paket einen `service_type`-Wert mit zulässigen Bereichen Location, Catering oder Fotografie; der bestehende Ressourcen-, RLS- und Doppelbuchungsschutz bleibt unverändert.
@@ -178,6 +179,7 @@ Priorität 3 – Qualität und Betrieb:
 - Anbieter entscheiden je Leistungsbereich autonom zwischen Einzelbuchung, Add-on, Bundle und Komplettpaket sowie über die Zulässigkeit externer Ergänzungen. So können Kunden einzelne Leistungen kombinieren, während Anbieter ihre Angebotsgrenzen verbindlich festlegen.
 - Buchbare Pakete werden unabhängig von der ursprünglichen Hauptkategorie eines Partnerkontos pro Leistungsbereich geführt. Dadurch kann ein Mehrbereichsanbieter ein Location-Paket und ergänzende Catering- oder Fotografie-Pakete getrennt veröffentlichen und verwalten.
 - Öffentliche Suche und Zusammenstellung bleiben ohne Konto möglich, damit Paare den Marketplace ohne Hürde erkunden können. Persönliche, geräteübergreifende Funktionen (Merkliste und persistenter Warenkorb) bleiben hinter der Anmeldung; die unverbindliche Vorauswahl wird nicht als Buchung oder Reservierung behandelt.
+- Die Kundenregistrierung wird nur auf localhost und dem festen `feat/ouivio-core-foundation`-Preview angezeigt. Die produktive Oberfläche bleibt im Pre-Launch-Zustand ohne Registrierungsoption; das bestehende Supabase-Projekt und dessen globale Auth-Einstellungen werden dafür nicht verändert.
 
 ## Letzte Prüfung
 
@@ -243,4 +245,5 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Production-Build nach der Paketzuordnung zu Leistungsbereichen erfolgreich; `index.html` und `public/index.html` behalten beide den SHA-256-Hash `72d42a351c4e435dcf6cd90efa37fb3e1291ae7979e01a78d03e8c31ff505288`.
 - TypeScript-Prüfung und optimierter Production-Build nach Einführung der öffentlichen Mehranbieter-Auswahl erfolgreich; die geschützten Startseiten behalten beide den SHA-256-Hash `72d42a351c4e435dcf6cd90efa37fb3e1291ae7979e01a78d03e8c31ff505288`.
 - Browserprüfung im Feature-Preview erfolgreich: Anbieter lässt sich ohne Konto zur Auswahl hinzufügen, die Auswahl zeigt Anzahl und Leistung, und erst „In den Warenkorb übernehmen“ öffnet die Anmeldegrenze ohne Fehleroverlay.
+- TypeScript-Prüfung und optimierter Production-Build nach Ergänzung der preview-beschränkten Kundenregistrierung erfolgreich; die geschützten Startseiten behalten beide den SHA-256-Hash `72d42a351c4e435dcf6cd90efa37fb3e1291ae7979e01a78d03e8c31ff505288`.
 - Supabase Security Advisor nach der Migration geprüft: keine neue Warnung; die weiterhin bekannten Hinweise betreffen ausschließlich die absichtlich begrenzten RSVP-/Verfügbarkeitsfunktionen und den noch deaktivierten Schutz vor kompromittierten Passwörtern.
