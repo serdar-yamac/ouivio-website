@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseClient } from "./supabase";
 
 export type AccountType = "customer" | "partner";
+export type PartnerOnboardingDetails = { city?: string; category?: "location" | "photography" | "catering" };
 
 export async function ensureAccountProfile(user: User) {
   const supabase = getSupabaseClient();
@@ -18,12 +19,12 @@ export async function ensureAccountProfile(user: User) {
   return { type: inserted.data.account_type as AccountType, displayName: inserted.data.display_name as string };
 }
 
-export async function ensurePartnerProfile(userId: string, businessName: string) {
+export async function ensurePartnerProfile(userId: string, businessName: string, details: PartnerOnboardingDetails = {}) {
   const supabase = getSupabaseClient();
   const existing = await supabase.from("partner_profiles").select("id, business_name, category, city, timezone").eq("owner_id", userId).maybeSingle();
   if (existing.error) throw existing.error;
   if (existing.data) return existing.data;
-  const inserted = await supabase.from("partner_profiles").insert({ owner_id: userId, business_name: businessName }).select("id, business_name, category, city, timezone").single();
+  const inserted = await supabase.from("partner_profiles").insert({ owner_id: userId, business_name: businessName, city: details.city?.trim() || null, category: details.category || null }).select("id, business_name, category, city, timezone").single();
   if (inserted.error) throw inserted.error;
   return inserted.data;
 }
