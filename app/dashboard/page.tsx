@@ -467,7 +467,7 @@ export default function Home() {
         const { data } = await supabase.auth.getUser();
         if (!activeSubscription) return;
         if (!data.user) {
-          router.replace("/login");
+          router.replace("/access");
           return;
         }
         const account = await ensureAccountProfile(data.user);
@@ -507,7 +507,7 @@ export default function Home() {
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        if (!session) router.replace("/login");
+        if (!session) router.replace("/access");
       },
     );
 
@@ -545,7 +545,7 @@ export default function Home() {
 
   const signOut = async () => {
     await getSupabaseClient().auth.signOut();
-    router.replace("/login");
+    router.replace("/access");
   };
 
   if (!authReady) {
