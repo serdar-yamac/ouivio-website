@@ -56,7 +56,7 @@ Technische Grundlage:
 - Rücklink vom Dashboard zur Startseite ist vorhanden.
 - Das Dashboard ist für schmale Smartphones optimiert: sichere untere Navigation, überlauffreier Kopfbereich, kompaktere Karten und gut erreichbare Sharing-Aktionen mit mindestens 44 Pixel hohen Touch-Zielen.
 - Die Anmeldung für Kundenkonten steht unter `/login` bereit. Auf localhost und dem festen Feature-Preview können Kundenkonten zur Entwicklungsprüfung selbst registriert werden; die Production-Oberfläche bleibt ohne Registrierungsoption.
-- Der Zugang ist über `/access` eindeutig nach Rolle getrennt: Paare starten ein Kundenkonto. Unternehmen werden zur limitierten Pilotphase auf der Startseite mit dem bestehenden Kontaktformular geführt; sie erhalten erst nach individueller Prüfung einen Zugang.
+- Der Zugang ist über `/access` eindeutig nach Rolle getrennt: Paare starten ein Kundenkonto. Unternehmen werden über `/index.html#partner` zur limitierten Pilotphase auf der Startseite mit dem bestehenden Kontaktformular geführt; sie erhalten erst nach individueller Prüfung einen Zugang.
 - Nach einer Wahl unter `/access` ist das Kundenkonto im folgenden Registrierungsformular bereits festgelegt. Anbieter werden nicht zur Selbstregistrierung geführt, sondern bewusst in den Pilotphasenprozess auf der Startseite.
 - Die Startseite verlinkt „Dashboard öffnen“ auf die Kontoart-Auswahl und „Pilotpartner werden“ in den Pilotphasenbereich. In der öffentlichen Suche führt „Für Anbieter“ ebenfalls dorthin; Kontoaufforderungen für Merkliste und Warenkorb führen gezielt zum Kunden-Einstieg.
 - Nicht angemeldete Dashboard-Aufrufe werden zur Anmeldung weitergeleitet; Sitzungen werden automatisch gespeichert und erneuert.
@@ -204,6 +204,7 @@ Priorität 3 – Qualität und Betrieb:
 
 - Zugangsauswahl vereinfacht: Ein direkter Kunden- oder Partner-Einstieg setzt die Rolle einmalig vor und blendet die redundante zweite Auswahl aus.
 - Partner-Selbstregistrierung für die Pilotphase gesperrt: Sämtliche öffentlichen Anbieter-Einstiege führen zum bestehenden Pilotpartner-Bereich auf der Startseite; Kundenregistrierung bleibt im Feature-Preview verfügbar.
+- Anbieter-Einstiege verwenden bewusst `/index.html#partner`, weil der Root-Redirect von `/` sonst den Anker verlieren würde. Damit landet der Browser direkt am Pilotpartner-Formular.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Umstellung auf den manuellen Pilotpartner-Prozess erfolgreich. Die beiden Startseitenkopien sind inhaltlich identisch; nur die bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach der Vereinfachung des Rollen-Einstiegs erfolgreich; nur die bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen.
 - Zugangswege zwischen Startseite, öffentlicher Suche, Anmeldung, Kunden-Dashboard und Partnerbereich vereinheitlicht. Die Original-Startseite und die eingebettete rote Ouivio-Wortmarke wurden nicht gestaltet oder verändert; ausschließlich Ziel-URLs bestehender Schaltflächen wurden angepasst und beide HTML-Kopien synchron gehalten.
