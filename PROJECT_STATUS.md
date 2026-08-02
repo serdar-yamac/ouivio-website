@@ -62,6 +62,9 @@ Technische Grundlage:
 - Registrierung unterscheidet Kunden- und Partnerkonten und leitet nach der Anmeldung in den passenden Bereich weiter.
 - Partner besitzen unter `/partner` ein eigenständiges responsives Dashboard mit Kennzahlen, Monatskalender und Tagesagenda.
 - Partnertermine werden als Anfrage, Option, Buchung, Termin oder Sperrzeit im persönlichen Supabase-Partnerbereich gespeichert.
+- Partnertermine können nachträglich bearbeitet und mit Status, Ort sowie internen Notizen gepflegt werden.
+- Der Kalender erkennt zeitliche Überschneidungen mit aktiven Einträgen und warnt vor dem Speichern, ohne begründete Paralleltermine mehrerer Teams zu blockieren.
+- Ausgewählte Kalendertage lassen sich über eine Schnellaktion als Sperrzeit vorbereiten; Tagesagenda und Termine zeigen Status sowie Ouivio-/Importquelle.
 - Ein Integrationszentrum für Google Calendar, Outlook/Microsoft 365 und Apple Calendar/iCalendar ist vorbereitet; die produktiven Verbindungen benötigen noch die jeweiligen Anbieter-Zugangsdaten.
 
 ### Deployment
@@ -89,7 +92,7 @@ Technische Grundlage:
 - Das Supabase-Datenbankschema ist im Projekt `Ouivio` aktiv, die öffentlichen Anwendungsvariablen sind lokal und für den Feature-Branch in Vercel Preview verbunden.
 - Authentifizierung und clientseitiger Routenschutz sind umgesetzt; ein vollständiger Registrierungstest mit echter E-Mail-Bestätigung erfordert noch ein Benutzerkonto.
 - Frühere Browser-Demoaufgaben aus `ouivio.tasks.v2` werden bewusst nicht automatisch in einen echten Benutzerbereich übernommen.
-- Kalendertermine sind nicht editierbar und nicht mit Google Calendar oder Outlook verbunden.
+- Externe Kalender sind noch nicht produktiv mit Google Calendar oder Outlook verbunden.
 - Die Partner-Kalenderoberfläche und das Sync-Datenmodell sind fertig; echte Zwei-Wege-Synchronisation ist bis zur Einrichtung von Google-/Microsoft-OAuth und Apple iCalendar/CalDAV noch nicht aktiv.
 - Anbieterprofile, Detailansichten, Verfügbarkeit, Anfragen und Buchungen sind noch nicht produktiv umgesetzt.
 - Einladungslinks verwenden vor dem Production-Rollout bewusst den stabilen Vercel-Feature-Branch-Alias; die endgültige Ouivio-Domain muss vor dem öffentlichen Start eingesetzt werden.
@@ -146,6 +149,7 @@ Priorität 3 – Qualität und Betrieb:
 - Supabase Auth verwaltet Browser-Sitzungen; Autorisierung erfolgt ausschließlich über Datenbank-RLS und nicht über bearbeitbare Nutzer-Metadaten.
 - Die Kontoart wird nach der Registrierungswahl in einem RLS-geschützten Kontoprofil festgeschrieben. Partnerzugänge erzeugen keinen Hochzeitsbereich.
 - Ouivio ist die führende Kalenderdatenquelle; externe Kalender werden providerneutral über Quellen, externe Ereignis-IDs und Sync-Cursor abgeglichen.
+- Kalenderkonflikte werden zunächst als Warnung behandelt. Eine harte Sperre bleibt eine spätere, partnerabhängige Einstellung, weil Anbieter mehrere parallel verfügbare Teams oder Ressourcen besitzen können.
 
 ## Letzte Prüfung
 
@@ -182,3 +186,4 @@ Priorität 3 – Qualität und Betrieb:
 - Abhängigkeitsprüfung ausgeführt: keine kritischen Hinweise; drei hohe transitive Hinweise der bestehenden Next.js-15-Lieferkette sind dokumentiert und nicht automatisch mit einem riskanten Major-Wechsel behoben worden.
 - Partner-Kalendergrundlage in Supabase angewendet und geprüft: vier neue öffentliche Tabellen mit aktiver RLS sowie ein privater, für Browserrollen gesperrter Secret-Speicher.
 - TypeScript-Prüfung und optimierter Production-Build einschließlich der neuen Route `/partner` erfolgreich.
+- TypeScript-Prüfung und optimierter Production-Build nach Ergänzung von Terminbearbeitung, Status-/Notizpflege, Sperrzeit-Schnellaktion und Überschneidungswarnung erfolgreich; geschützte Startseitenkopien weiterhin bytegleich.

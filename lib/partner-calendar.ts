@@ -18,6 +18,12 @@ export async function createPartnerEvent(partnerId: string, input: Omit<PartnerC
   return mapEvent(data);
 }
 
+export async function updatePartnerEvent(id: string, input: Pick<PartnerCalendarEvent, "title" | "startsAt" | "endsAt" | "location" | "notes" | "type" | "status">) {
+  const { data, error } = await getSupabaseClient().from("partner_calendar_events").update({ title: input.title, starts_at: input.startsAt, ends_at: input.endsAt, location: input.location || null, notes: input.notes || null, event_type: input.type, status: input.status, updated_at: new Date().toISOString() }).eq("id", id).select(select).single();
+  if (error) throw error;
+  return mapEvent(data);
+}
+
 export async function deletePartnerEvent(id: string) {
   const { error } = await getSupabaseClient().from("partner_calendar_events").delete().eq("id", id);
   if (error) throw error;

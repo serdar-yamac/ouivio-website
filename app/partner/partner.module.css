@@ -2,3 +2,19 @@
 @media(max-width:1050px){.shell{grid-template-columns:82px 1fr}.sidebar{padding-inline:10px}.logo{font-size:23px;padding-inline:3px}.partnerBadge,.sidebar nav span,.account span{display:none}.sidebar nav button{justify-content:center}.account{justify-content:center}.calendarLayout{grid-template-columns:1fr}.bottomGrid{grid-template-columns:1fr}}
 @media(max-width:700px){.shell{display:block}.sidebar{position:fixed;z-index:20;left:0;right:0;top:auto;bottom:0;width:100%;height:76px;padding:6px 4px max(6px,env(safe-area-inset-bottom));border-top:1px solid #30303a}.logo,.partnerBadge,.account{display:none}.sidebar nav{grid-template-columns:repeat(6,minmax(0,1fr));gap:0}.sidebar nav button{min-width:0;min-height:56px;padding:6px 1px;flex-direction:column;gap:2px;font-size:8px}.sidebar nav span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}.content{padding:0 12px calc(95px + env(safe-area-inset-bottom))}.topbar{height:67px}.topbar>button:first-of-type{padding:10px;font-size:11px}.logout{display:none}.welcome{padding:25px 20px;display:block}.welcome h1{font-size:39px}.syncState{min-width:0;margin-top:22px}.stats{grid-template-columns:1fr 1fr}.stats article:last-child{grid-column:1/-1}.calendarCard{padding:14px}.calendarHead{align-items:flex-start}.calendarHead>div:last-child button:nth-child(2){display:none}.weekdays span{padding:10px 2px;text-align:center}.monthGrid button{min-height:54px;padding:5px 3px}.monthGrid button[aria-pressed="true"]>span{width:23px;height:23px}.monthGrid button div{margin-top:5px}.legend{gap:8px}.agenda,.eventForm,.connections{padding:20px}.eventForm>div:not(:first-child){grid-template-columns:1fr}.placeholder{padding-top:30px}.placeholder h1{font-size:42px}}
 @media(max-width:380px){.content{padding-inline:8px}.welcome h1{font-size:35px}.calendarHead h2{font-size:17px}.calendarHead button{padding:0 8px}.monthGrid button{font-size:11px}.stats article{padding:17px}}
+
+/* Partner calendar workflow */
+.agendaHead,.formHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.agendaHead>button,.formHead>button{border:1px solid #e7e2de;background:#fff;border-radius:9px;padding:8px 10px;color:#4c474a;font-size:11px;font-weight:750;cursor:pointer}
+.agenda article strong,.agenda article span,.agenda article small,.agenda article em{display:block}
+.agenda article em{color:var(--muted);font-size:11px;font-style:normal;margin-top:6px}
+.cancelledEvent{opacity:.55}.cancelledEvent strong{text-decoration:line-through}
+.eventActions{display:flex;align-items:center;gap:3px}
+.eventActions button{border:0!important;background:none!important;color:#777!important;font-size:10px!important;font-weight:750;padding:4px!important;cursor:pointer}
+.eventActions button:last-child{color:#aaa!important;font-size:20px!important}
+.eventForm textarea{width:100%;border:1px solid #ded8d4;border-radius:11px;background:#fff;padding:11px;font:inherit;resize:vertical}
+.eventForm input:focus,.eventForm select:focus,.eventForm textarea:focus{outline:2px solid rgba(223,22,50,.16);border-color:var(--accent)}
+.formHead>div{display:block!important}.formHead>button{display:block!important}
+.conflict{display:block!important;background:#fff7e6;border:1px solid #f2d391;color:#725314;border-radius:12px;padding:11px 12px;margin-bottom:13px}
+.conflict strong,.conflict span{display:block;font-size:11px}.conflict span{margin-top:3px}
+@media(max-width:700px){.agendaHead>button,.formHead>button{min-height:40px}.eventActions{flex-direction:column;align-items:flex-end}.eventActions button:first-child{min-height:34px}.eventForm>div.conflict{display:block!important}}
