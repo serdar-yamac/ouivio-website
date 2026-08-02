@@ -24,7 +24,8 @@ export default function LumaProfile() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [requested, setRequested] = useState(false);
+  const [bookingStep, setBookingStep] = useState<"idle" | "available" | "booking">("idle");
+  const [selectedPackage, setSelectedPackage] = useState("Reportage");
 
   useEffect(() => {
     if (!isPartnerDemoAllowed(window.location)) return router.replace("/login");
@@ -66,7 +67,7 @@ export default function LumaProfile() {
 
     <section className={styles.packages}>
       <div className={styles.sectionHeading}><p className={styles.eyebrow}>Pakete</p><h2>Transparent und vergleichbar.</h2><p>Alle Pakete enthalten persönliche Vorbereitung, professionell bearbeitete Bilder in hoher Auflösung und eine private Online-Galerie.</p></div>
-      <div className={styles.packageGrid}>{packages.map(item => <article key={item.name} className={"featured" in item ? styles.featured : undefined}>{"featured" in item && <small>Am häufigsten gewählt</small>}<h3>{item.name}</h3><p>{item.duration}</p><strong>{item.price}</strong><ul>{item.features.map(feature => <li key={feature}>✓ {feature}</li>)}</ul><button onClick={() => setRequested(true)}>Paket auswählen</button></article>)}</div>
+      <div className={styles.packageGrid}>{packages.map(item => <article key={item.name} className={"featured" in item ? styles.featured : undefined}>{"featured" in item && <small>Am häufigsten gewählt</small>}<h3>{item.name}</h3><p>{item.duration}</p><strong>{item.price}</strong><ul>{item.features.map(feature => <li key={feature}>✓ {feature}</li>)}</ul><button onClick={() => { setSelectedPackage(item.name); setBookingStep("available"); }}>Paket wählen & prüfen</button></article>)}</div>
     </section>
 
     <section className={styles.reviews}>
@@ -74,7 +75,8 @@ export default function LumaProfile() {
       <div className={styles.rating}><strong>4,9</strong><span>★★★★★</span><p>aus 38 Hochzeiten</p></div>
     </section>
 
-    <aside className={styles.inquiry} aria-label="Verfügbarkeit anfragen"><div><span>Reportagen ab</span><strong>2.400 €</strong></div><label>Hochzeitstermin<input type="date" defaultValue="2027-06-19"/></label><button onClick={() => setRequested(true)}>Verfügbarkeit anfragen</button><small>Unverbindliche Demo-Anfrage</small></aside>
-    {requested && <div className={styles.toast} role="status">Demo-Anfrage vorbereitet – noch nicht versendet.<button onClick={() => setRequested(false)}>Schließen</button></div>}
+    <aside className={styles.inquiry} aria-label="Verfügbarkeit prüfen"><div><span>{bookingStep === "available" ? `${selectedPackage} verfügbar` : "Reportagen ab"}</span><strong>{bookingStep === "available" ? "19.06.2027" : "2.400 €"}</strong></div><label>Hochzeitstermin<input type="date" defaultValue="2027-06-19" onChange={() => setBookingStep("idle")}/></label><button onClick={() => setBookingStep(bookingStep === "available" ? "booking" : "available")}>{bookingStep === "available" ? "Jetzt direkt buchen" : "Verfügbarkeit prüfen"}</button><small>Sofortige Prüfung · keine Anfrage</small></aside>
+    {bookingStep === "available" && <div className={styles.toast} role="status"><strong>✓ Termin ist verfügbar.</strong> {selectedPackage} kann direkt gebucht werden.<button onClick={() => setBookingStep("booking")}>Jetzt buchen</button></div>}
+    {bookingStep === "booking" && <div className={styles.toast} role="status"><strong>Buchung wird vorbereitet.</strong> Im nächsten Schritt folgen Kundendaten und Zahlung. Demo – noch keine echte Buchung.<button onClick={() => setBookingStep("idle")}>Schließen</button></div>}
   </main>;
 }

@@ -98,7 +98,7 @@ Technische Grundlage:
 - Frühere Browser-Demoaufgaben aus `ouivio.tasks.v2` werden bewusst nicht automatisch in einen echten Benutzerbereich übernommen.
 - Externe Kalender sind noch nicht produktiv mit Google Calendar oder Outlook verbunden.
 - Die Partner-Kalenderoberfläche und das Sync-Datenmodell sind fertig; echte Zwei-Wege-Synchronisation ist bis zur Einrichtung von Google-/Microsoft-OAuth und Apple iCalendar/CalDAV noch nicht aktiv.
-- Anbieterprofile, Detailansichten, Verfügbarkeit, Anfragen und Buchungen sind noch nicht produktiv umgesetzt.
+- Anbieterprofile, Detailansichten, Live-Verfügbarkeit und direkte Buchungen sind noch nicht produktiv umgesetzt.
 - Einladungslinks verwenden vor dem Production-Rollout bewusst den stabilen Vercel-Feature-Branch-Alias; die endgültige Ouivio-Domain muss vor dem öffentlichen Start eingesetzt werden.
 - Gästelisten-Import, Haushalte, Begleitpersonen und serverseitiger automatischer Versand fehlen noch; persönliche Links können bereits über WhatsApp, Instagram oder das Standard-Mailprogramm geteilt werden.
 - Suche wirkt derzeit nur auf die lokale Anbieterliste.
@@ -123,7 +123,7 @@ Priorität 2 – Kernfunktionen:
 3. Google Calendar und Microsoft Graph per OAuth anbinden, Webhook-/Delta-Synchronisation ergänzen und Apple/iCalendar serverseitig bereitstellen.
 3. Budget um Beleg-Uploads, Fälligkeiten und detaillierte Kategorienauswertungen erweitern.
 4. Gästeliste um Import, Haushalte, Begleitpersonen und E-Mail-Einladungsversand erweitern.
-5. Anbieterprofile, Filter, Favoriten, Anfragen, Verfügbarkeit und Buchungsablauf entwickeln.
+5. Anbieterprofile, Filter, Favoriten, Live-Verfügbarkeit, Checkout und direkten Buchungsablauf entwickeln.
 
 Priorität 3 – Qualität und Betrieb:
 
@@ -158,6 +158,7 @@ Priorität 3 – Qualität und Betrieb:
 - Ouivio ist die führende Kalenderdatenquelle; externe Kalender werden providerneutral über Quellen, externe Ereignis-IDs und Sync-Cursor abgeglichen.
 - Kalenderkonflikte werden zunächst als Warnung behandelt. Eine harte Sperre bleibt eine spätere, partnerabhängige Einstellung, weil Anbieter mehrere parallel verfügbare Teams oder Ressourcen besitzen können.
 - Anbieterarten teilen sich eine gemeinsame Partnergrundlage; kategoriespezifische Daten und Oberflächen werden modular ergänzt. Portfolio-Originale bleiben privat, bis eine kontrollierte Veröffentlichung für Kunden umgesetzt ist.
+- Ouivio wird als direkt buchbarer Marketplace entwickelt: Kunden prüfen einen Termin gegen die echte Anbieterverfügbarkeit und buchen verfügbare Leistungen anschließend unmittelbar. Ein manueller Anfrageprozess ist nicht Teil des vorgesehenen Kernablaufs.
 
 ## Letzte Prüfung
 
@@ -202,10 +203,11 @@ Priorität 3 – Qualität und Betrieb:
 - Lokale Browserprüfung erfolgreich: Profil zeigt Location, Fotografie und Catering getrennt; der Fotografie-Leistungsbereich zeigt das geschützte Portfolioformular mit Dateiauswahl, Titel und Bildstil ohne Fehleroverlay.
 - Eine parallele Kundendemo unter `/discover?demo=1` zeigt Anbieterprofile aus Kundensicht. Erste vollständig fiktive Profile für Location und Catering enthalten eigens erzeugte Demo-Fotos, Leistungsmerkmale, Preise und Beispielgerichte; aus der Partner-Demo kann direkt zur Kundensicht gewechselt werden.
 - Die Kundendemo enthält zusätzlich das fiktive Profil „Luma Fotografie“ mit eigens erzeugter Portfolioaufnahme, dokumentarischem Bildstil, drei Paketen, Preisrahmen, Begleitdauer und Lieferzeit.
-- Das fiktive Profil „Luma Fotografie“ besitzt unter `/discover/luma?demo=1` eine ausführliche, wiederverwendbare Fotografenprofil-Vorlage: mehrteilige Portfolio-Reportage, Stilmerkmale, Persönlichkeit, Erfahrung, Pakete, Lieferzeiten, Bewertung, Merken-Aktion, Hochzeitstermin und eine klar als Demo gekennzeichnete Anfrageaktion.
+- Das fiktive Profil „Luma Fotografie“ besitzt unter `/discover/luma?demo=1` eine ausführliche, wiederverwendbare Fotografenprofil-Vorlage: mehrteilige Portfolio-Reportage, Stilmerkmale, Persönlichkeit, Erfahrung, Pakete, Lieferzeiten, Bewertung, Merken-Aktion, Hochzeitstermin und einen klar als Demo gekennzeichneten direkten Buchungseinstieg.
 - Drei zusätzliche eigens erzeugte, fiktive Portfolioaufnahmen zeigen Trauung, Dinner und Tanzfläche. Zusammen mit dem Paarportrait vermitteln sie den fotografischen Stil über einen ganzen beispielhaften Hochzeitstag statt nur über ein Titelbild.
 - Browserprüfung des Fotografenprofils erfolgreich: Karte und Bild laden, die Detailansicht zeigt alle drei Pakete, Vorschauzeit und Galerielieferzeit ohne Fehleroverlay.
 - Lokale Browserprüfung der Kundendemo erfolgreich: beide Anbieterbilder laden, Location- und Cateringkarten sind bedienbar und die Catering-Detailansicht zeigt Beispielgerichte, Kapazität und Anfrageaktion ohne Fehleroverlay.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Einführung der ausführlichen Fotografenprofil-Vorlage erfolgreich; `/discover/luma` wird als statische Route erzeugt und die geschützten Startseitenkopien bleiben bytegleich.
-- Browserprüfung der ausführlichen Luma-Seite erfolgreich: Portfolio, Profiltext, drei Pakete, Bewertung und Anfragekarte rendern ohne Fehleroverlay oder Konsolenfehler. Alle im sichtbaren Bereich benötigten Bilder laden; Merken- und Demo-Anfrageaktion funktionieren.
+- Browserprüfung der ausführlichen Luma-Seite erfolgreich: Portfolio, Profiltext, drei Pakete, Bewertung und Buchungskarte rendern ohne Fehleroverlay oder Konsolenfehler. Alle im sichtbaren Bereich benötigten Bilder laden; Merken- und Demo-Buchungseinstieg funktionieren.
 - Responsive Browserprüfung bei 390 × 844 Pixel erfolgreich: Überschrift und Anfrageaktion sind bedienbar, die Seite verursacht kein horizontales Überlaufen.
+- Fotografenprofil auf das Direktbuchungsprinzip umgestellt: Der Hochzeitstermin wird sofort geprüft, ein freier Termin wird bestätigt und führt ohne manuellen Anfrageprozess unmittelbar zum Buchungsschritt. TypeScript-Prüfung, Production-Build und Browserprüfung des vollständigen Ablaufs erfolgreich; keine Konsolenfehler, kein Fehleroverlay und kein horizontales Überlaufen.
