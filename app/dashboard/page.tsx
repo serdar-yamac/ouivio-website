@@ -31,6 +31,7 @@ import {
 import { ensureWeddingWorkspace } from "../../lib/workspace";
 import { ensureAccountProfile } from "../../lib/account";
 import { readDemoBooking, type DemoBooking } from "../../lib/demo-booking";
+import { fetchFavoritePackages, type FavoritePackage } from "../../lib/favorite-packages";
 
 const sections = [
   "Übersicht",
@@ -120,6 +121,7 @@ export default function Home() {
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [copiedGuestId, setCopiedGuestId] = useState<string | null>(null);
   const [demoBooking, setDemoBooking] = useState<DemoBooking | null>(null);
+  const [favoritePackages, setFavoritePackages] = useState<FavoritePackage[]>([]);
   const done = tasks.filter((task) => task.done).length;
   const progress = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
   const plannedBudget = budgetItems.reduce(
@@ -482,10 +484,11 @@ export default function Home() {
           return;
         }
         const workspaceId = await ensureWeddingWorkspace(data.user);
-        const [cloudTasks, cloudBudget, cloudGuests] = await Promise.all([
+        const [cloudTasks, cloudBudget, cloudGuests, cloudFavorites] = await Promise.all([
           fetchTasks(workspaceId),
           fetchBudget(workspaceId),
           fetchGuests(workspaceId),
+          fetchFavoritePackages(workspaceId),
         ]);
         if (!activeSubscription) return;
         setWeddingId(workspaceId);
@@ -496,6 +499,7 @@ export default function Home() {
         setBudgetItems(cloudBudget.items);
         setBudgetLoading(false);
         setGuests(cloudGuests);
+        setFavoritePackages(cloudFavorites);
         setGuestsLoading(false);
         setUserEmail(data.user.email ?? "Ouivio Konto");
         setAuthReady(true);
@@ -1153,6 +1157,7 @@ export default function Home() {
             intro="Handverlesene Profis, passend zu eurem Stil, Termin und Budget."
           >
             <div className="vendor-grid">
+              {favoritePackages.map((favorite) => <article className="card vendor-card" key={favorite.packageId}><span className="match">♥ Gemerkt</span><h2>{favorite.partnerName}</h2><p>{favorite.serviceType} · {favorite.city}<br/>{favorite.packageName}</p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: favorite.currency }).format(favorite.priceAmount)}</strong><button onClick={() => router.push("/discover")}>Angebot ansehen →</button></article>)}
               {filteredVendors.map((vendor) => (
                 <article className="card vendor-card" key={vendor.name}>
                   <div className="vendor-visual">{vendor.icon}</div>
