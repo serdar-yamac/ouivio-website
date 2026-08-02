@@ -8,7 +8,7 @@ Ausgangs-Commit der Bestandsaufnahme: `3585c2a` (`Serve approved Ouivio landing 
 
 ## Aktueller Entwicklungsstand
 
-Ouivio besteht aus einer geschützten statischen HTML-Startseite und einem separaten interaktiven Next.js-Dashboard. Die Root-Route `/` leitet auf `/index.html` um; von dort führt „Dashboard öffnen“ zu `/dashboard`.
+Ouivio besteht aus einer geschützten statischen HTML-Startseite und einem separaten interaktiven Next.js-Dashboard. Die Root-Route `/` leitet auf `/index.html` um; von dort führt „Dashboard öffnen“ zur zentralen Kontoart-Auswahl unter `/access`.
 
 Technische Grundlage:
 
@@ -56,6 +56,8 @@ Technische Grundlage:
 - Rücklink vom Dashboard zur Startseite ist vorhanden.
 - Das Dashboard ist für schmale Smartphones optimiert: sichere untere Navigation, überlauffreier Kopfbereich, kompaktere Karten und gut erreichbare Sharing-Aktionen mit mindestens 44 Pixel hohen Touch-Zielen.
 - Die Anmeldung für Kunden- und Partnerkonten steht unter `/login` bereit. Auf localhost und dem festen Feature-Preview können beide Kontoarten zur Entwicklungsprüfung selbst registriert werden; die Production-Oberfläche bleibt ohne Registrierungsoption.
+- Der Zugang ist über `/access` eindeutig nach Rolle getrennt: Paare starten ein Kundenkonto, Unternehmen ein Partnerkonto. Bestehende Konten melden sich über denselben Einstieg an und werden danach automatisch zum passenden Kunden- oder Partnerbereich geleitet.
+- Die Startseite verlinkt „Dashboard öffnen“ auf die Kontoart-Auswahl und „Pilotpartner werden“ direkt auf den Partner-Einstieg. In der öffentlichen Suche ist der Partner-Einstieg zusätzlich sichtbar; Kontoaufforderungen für Merkliste und Warenkorb führen gezielt zum Kunden-Einstieg.
 - Nicht angemeldete Dashboard-Aufrufe werden zur Anmeldung weitergeleitet; Sitzungen werden automatisch gespeichert und erneuert.
 - Nach der ersten bestätigten Anmeldung wird automatisch ein persönlicher Hochzeitsbereich mit Eigentümer-Mitgliedschaft angelegt.
 - Abmeldung ist direkt im Dashboard möglich.
@@ -191,12 +193,16 @@ Priorität 3 – Qualität und Betrieb:
 - Öffentliche Suche und Zusammenstellung bleiben ohne Konto möglich, damit Paare den Marketplace ohne Hürde erkunden können. Persönliche, geräteübergreifende Funktionen (Merkliste und persistenter Warenkorb) bleiben hinter der Anmeldung; die unverbindliche Vorauswahl wird nicht als Buchung oder Reservierung behandelt.
 - Die Kundenregistrierung wird nur auf localhost und dem festen `feat/ouivio-core-foundation`-Preview angezeigt. Die produktive Oberfläche bleibt im Pre-Launch-Zustand ohne Registrierungsoption; das bestehende Supabase-Projekt und dessen globale Auth-Einstellungen werden dafür nicht verändert.
 - Die Partnerregistrierung folgt derselben Preview-Begrenzung wie die Kundenregistrierung. Die bei der Registrierung übermittelten Unternehmensdaten dienen ausschließlich der einmaligen Profilerstellung; Autorisierung bleibt durch die bestehenden eigentümergebundenen RLS-Regeln abgesichert und beruht nicht auf bearbeitbaren Nutzer-Metadaten.
+- Die zentrale Zugangsauswahl unter `/access` ist der Standard-Einstieg für nicht angemeldete Nutzer. Direkte Aufrufe des Kunden-Dashboards führen dorthin; direkte Partneraufrufe führen gezielt zum Partner-Login. Nach einer bestehenden Anmeldung entscheidet das geschützte Kontoprofil weiterhin serverseitig, welcher Bereich geöffnet wird.
 - Checkout wird in Stufen entwickelt: Der aktuelle Preview darf keine Zahlung oder Terminreservierung auslösen. Erst nach der verbindlichen Mehranbieter-Verfügbarkeitsprüfung wird eine Zahlungsintegration ausgewählt und eingebunden.
 - Öffentliche Angebotsdaten werden ausschließlich über `search_published_partner_packages` bereitgestellt. Die absichtlich anonyme, `SECURITY DEFINER`-basierte Funktion gibt nur veröffentlichte Pakete und aktive, vom Partner freigegebene Leistungsbereiche zurück; sie verwendet einen leeren Suchpfad, besitzt explizite Ausführungsrechte und öffnet keine Tabellenrechte.
 - Die öffentliche Katalogfunktion darf zusätzlich anhand eines konkreten Wunschzeitpunkts unpassende Pakete ausblenden. Die Prüfung erfolgt serverseitig gegen Ressourcen, Puffer, Kalendereinträge und aktive Zahlungsfenster; weder Belegungsgrund noch Kalenderdetails werden veröffentlicht.
 - Der Benutzer hat die Weiterentwicklung des gesamten Projekts auf `feat/ouivio-core-foundation` ausdrücklich freigegeben. `main` bleibt unverändert; die handschriftliche Ouivio-Wortmarke bleibt auch auf dem Entwicklungsbranch geschützt. Startseitenquellen werden dort stets in `index.html` und `public/index.html` synchron gehalten.
 
 ## Letzte Prüfung
+
+- Zugangswege zwischen Startseite, öffentlicher Suche, Anmeldung, Kunden-Dashboard und Partnerbereich vereinheitlicht. Die Original-Startseite und die eingebettete rote Ouivio-Wortmarke wurden nicht gestaltet oder verändert; ausschließlich Ziel-URLs bestehender Schaltflächen wurden angepasst und beide HTML-Kopien synchron gehalten.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach Einführung der Zugangsauswahl erfolgreich. Die neue Route `/access` wird statisch erzeugt; es bestehen nur die zuvor bekannten Autoprefixer-Hinweise in vorhandenen CSS-Dateien.
 
 - Branch und Remote-Synchronität geprüft: sauber, vor dieser Dokumentationsänderung identisch mit `origin/feat/ouivio-core-foundation`.
 - Projektstruktur, Commit-Historie, Startseiten-Routing und Dashboard-Code geprüft.
