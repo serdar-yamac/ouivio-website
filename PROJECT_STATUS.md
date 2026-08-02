@@ -31,7 +31,7 @@ Technische Grundlage:
 - Die öffentliche Startseite ist zusätzlich für 320–430 Pixel breite Smartphone-Hochformate optimiert: skalierende Überschriften, einspaltige Hauptaktionen, kompakter Showcase sowie überlauffreie Karten und Formulare.
 - Im mobilen Hero erscheint die Ouivio-Vorschau vor dem Text; die Verfügbarkeits-Kalenderkarte bleibt auch im Hochformat sichtbar und passt vollständig in die Bildschirmbreite.
 - Rote handschriftliche Ouivio-Wortmarke ist als eingebettetes Original-Asset vorhanden.
-- Link zum Dashboard unter `/dashboard` ist integriert. Auf dem Entwicklungsbranch führt der zweite Hero-Button zusätzlich direkt zur öffentlichen Anbietersuche unter `/discover`; Gestaltung und Wortmarke bleiben unverändert.
+- Link zum Dashboard unter `/dashboard` ist integriert. Auf dem Entwicklungsbranch ist „Hochzeit planen & Anbieter finden“ als klarer roter Hero-Einstieg direkt mit der öffentlichen Anbietersuche unter `/discover` verbunden; „Pilotpartner werden“ bleibt als nachrangige Aktion erhalten. Die Wortmarke bleibt unverändert.
 
 ### Dashboard
 
@@ -199,9 +199,11 @@ Priorität 3 – Qualität und Betrieb:
 - Öffentliche Angebotsdaten werden ausschließlich über `search_published_partner_packages` bereitgestellt. Die absichtlich anonyme, `SECURITY DEFINER`-basierte Funktion gibt nur veröffentlichte Pakete und aktive, vom Partner freigegebene Leistungsbereiche zurück; sie verwendet einen leeren Suchpfad, besitzt explizite Ausführungsrechte und öffnet keine Tabellenrechte.
 - Die öffentliche Katalogfunktion darf zusätzlich anhand eines konkreten Wunschzeitpunkts unpassende Pakete ausblenden. Die Prüfung erfolgt serverseitig gegen Ressourcen, Puffer, Kalendereinträge und aktive Zahlungsfenster; weder Belegungsgrund noch Kalenderdetails werden veröffentlicht.
 - Der Benutzer hat die Weiterentwicklung des gesamten Projekts auf `feat/ouivio-core-foundation` ausdrücklich freigegeben. `main` bleibt unverändert; die handschriftliche Ouivio-Wortmarke bleibt auch auf dem Entwicklungsbranch geschützt. Startseitenquellen werden dort stets in `index.html` und `public/index.html` synchron gehalten.
+- Auf ausdrücklichen Wunsch darf der Such-Einstieg auf der Startseite des Entwicklungsbranches stärker hervorgehoben werden; diese Ausnahme betrifft ausschließlich den bestehenden Hero-Button, nicht die geschützte Wortmarke.
 
 ## Letzte Prüfung
 
+- Der bisher dezente Link „Anbieter entdecken“ wurde im Entwicklungsbranch zu einem auffälligen roten Hero-Einstieg „Hochzeit planen & Anbieter finden“ mit direktem Ziel `/discover`. Die Pilotpartner-Aktion bleibt erreichbar, die rote handschriftliche Wortmarke wurde nicht verändert und beide Startseitenkopien sind bytegleich. TypeScript-Prüfung und optimierter Next.js-Production-Build sind erfolgreich; nur die drei bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen.
 - Zugangsauswahl vereinfacht: Ein direkter Kunden- oder Partner-Einstieg setzt die Rolle einmalig vor und blendet die redundante zweite Auswahl aus.
 - Partner-Selbstregistrierung für die Pilotphase gesperrt: Sämtliche öffentlichen Anbieter-Einstiege führen zum bestehenden Pilotpartner-Bereich auf der Startseite; Kundenregistrierung bleibt im Feature-Preview verfügbar.
 - Anbieter-Einstiege verwenden bewusst `/index.html#partner`, weil der Root-Redirect von `/` sonst den Anker verlieren würde. Damit landet der Browser direkt am Pilotpartner-Formular.
