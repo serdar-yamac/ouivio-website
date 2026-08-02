@@ -8,6 +8,7 @@ import { ensureWeddingWorkspace } from "../../lib/workspace";
 import { ensureAccountProfile, ensurePartnerProfile } from "../../lib/account";
 import { isFeaturePreviewHost } from "../../lib/feature-preview";
 import { isPartnerDemoAllowed } from "../../lib/partner-demo";
+import type { PartnerCategory } from "../../lib/partner-profile";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -20,6 +21,9 @@ export default function LoginPage() {
   const [registrationAvailable, setRegistrationAvailable] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [displayName, setDisplayName] = useState("");
+  const [accountType, setAccountType] = useState<"customer" | "partner">("customer");
+  const [city, setCity] = useState("");
+  const [category, setCategory] = useState<PartnerCategory>("location");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
@@ -39,7 +43,10 @@ export default function LoginPage() {
   const routeAuthenticatedUser = async (user: import("@supabase/supabase-js").User) => {
     const profile = await ensureAccountProfile(user);
     if (profile.type === "partner") {
-      await ensurePartnerProfile(user.id, profile.displayName);
+      const metadata = user.user_metadata;
+      const partnerCategory = metadata.category === "location" || metadata.category === "photography" || metadata.category === "catering" ? metadata.category : undefined;
+      const partnerCity = typeof metadata.city === "string" ? metadata.city : undefined;
+      await ensurePartnerProfile(user.id, profile.displayName, { city: partnerCity, category: partnerCategory });
       router.replace("/partner");
     } else {
       await ensureWeddingWorkspace(user);
@@ -60,7 +67,7 @@ export default function LoginPage() {
           email,
           password,
           options: {
-            data: { account_type: "customer", display_name: displayName.trim() },
+            data: { account_type: accountType, display_name: displayName.trim(), ...(accountType === "partner" ? { city: city.trim(), category } : {}) },
             emailRedirectTo: `${window.location.origin}/login?confirmed=1`,
           },
         });
@@ -87,21 +94,21 @@ export default function LoginPage() {
     <main className={styles.shell}>
       <section className={styles.panel} aria-labelledby="login-title">
         <Link className={styles.logo} href="/">Ouivio<span>.</span></Link>
-        <p className={styles.eyebrow}>{mode === "signup" ? "Kundenkonto anlegen" : "Geschützter Entwicklungszugang"}</p>
-        <h1 id="login-title">{mode === "signup" ? "Eure Planung beginnt hier." : "Willkommen zurück."}</h1>
-        <p className={styles.intro}>{mode === "signup" ? "Erstellt euer Kundenkonto, um eure Auswahl zu speichern und Verfügbarkeiten verbindlich zu prüfen." : "Meldet euch an, um eure persönliche Hochzeitsplanung fortzusetzen."}</p>
+        <p className={styles.eyebrow}>{mode === "signup" ? accountType === "partner" ? "Partnerkonto anlegen" : "Kundenkonto anlegen" : "Geschützter Entwicklungszugang"}</p>
+        <h1 id="login-title">{mode === "signup" ? accountType === "partner" ? "Euer Angebot beginnt hier." : "Eure Planung beginnt hier." : "Willkommen zurück."}</h1>
+        <p className={styles.intro}>{mode === "signup" ? accountType === "partner" ? "Erstellt euer Partnerkonto. Danach richtet ihr Unternehmen, Leistungen, Pakete und Verfügbarkeit ein." : "Erstellt euer Kundenkonto, um eure Auswahl zu speichern und Verfügbarkeiten verbindlich zu prüfen." : "Meldet euch an, um eure persönliche Hochzeitsplanung fortzusetzen."}</p>
 
-        {registrationAvailable ? <div className={styles.previewNotice} role="status"><strong>Entwicklungs-Preview</strong><span>Die Kundenregistrierung ist nur in diesem Entwicklungsstand geöffnet. Partnerkonten werden weiterhin manuell freigeschaltet.</span></div> : <div className={styles.prelaunch} role="status"><strong>Registrierung noch nicht geöffnet</strong><span>Neue Kunden- und Partnerkonten werden erst zum offiziellen Start freigeschaltet.</span></div>}
+        {registrationAvailable ? <div className={styles.previewNotice} role="status"><strong>Entwicklungs-Preview</strong><span>Kunden- und Partnerregistrierung sind hier zum Testen geöffnet. Sie bleiben auf localhost und dem Entwicklungsbranch begrenzt.</span></div> : <div className={styles.prelaunch} role="status"><strong>Registrierung noch nicht geöffnet</strong><span>Neue Kunden- und Partnerkonten werden erst zum offiziellen Start freigeschaltet.</span></div>}
 
         <form className={styles.form} onSubmit={submit}>
-          {mode === "signup" && <label>Eure Namen<input autoComplete="name" onChange={(event) => setDisplayName(event.target.value)} placeholder="z. B. Emma & Noah" required value={displayName}/></label>}
+          {mode === "signup" && <><div className={styles.accountTypeChoice} role="group" aria-label="Kontoart"><button aria-pressed={accountType === "customer"} onClick={() => setAccountType("customer")} type="button"><strong>Ich plane eine Hochzeit</strong><span>Kundenkonto</span></button><button aria-pressed={accountType === "partner"} onClick={() => setAccountType("partner")} type="button"><strong>Ich biete Leistungen an</strong><span>Partnerkonto</span></button></div><label>{accountType === "partner" ? "Unternehmensname" : "Eure Namen"}<input autoComplete="name" onChange={(event) => setDisplayName(event.target.value)} placeholder={accountType === "partner" ? "z. B. Gut Sonnenhof" : "z. B. Emma & Noah"} required value={displayName}/></label>{accountType === "partner" && <><label>Ort<input autoComplete="address-level2" onChange={(event) => setCity(event.target.value)} placeholder="z. B. Köln" required value={city}/></label><label>Anbieterart<select onChange={(event) => setCategory(event.target.value as PartnerCategory)} value={category}><option value="location">Location</option><option value="photography">Fotografie</option><option value="catering">Catering</option></select></label></>}</>}
           <label>E-Mail-Adresse<input autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder="ihr@beispiel.de" required type="email" value={email}/></label>
           <label>Passwort<input autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password}/></label>
           {error && <p className={styles.error} role="alert">{error}</p>}
           {success && <p className={styles.success} role="status">{success}</p>}
           <button className={styles.submit} disabled={busy} type="submit">{busy ? "Einen Moment …" : mode === "signup" ? "Konto anlegen" : "Sicher anmelden"}</button>
         </form>
-        {registrationAvailable && <button className={styles.modeSwitch} onClick={() => { setMode(current => current === "signin" ? "signup" : "signin"); setError(""); setSuccess(""); }} type="button">{mode === "signin" ? "Noch kein Konto? Kundenkonto anlegen" : "Bereits ein Konto? Anmelden"}</button>}
+        {registrationAvailable && <button className={styles.modeSwitch} onClick={() => { setMode(current => current === "signin" ? "signup" : "signin"); setError(""); setSuccess(""); }} type="button">{mode === "signin" ? "Noch kein Konto? Jetzt starten" : "Bereits ein Konto? Anmelden"}</button>}
         {partnerDemoAvailable && <Link className={styles.back} href="/partner?demo=1">Partner-Demo ohne Anmeldung öffnen →</Link>}
         <Link className={styles.back} href="/">← Zurück zur Startseite</Link>
       </section>
