@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getSupabaseClient } from "../../lib/supabase";
 import { ensureWeddingWorkspace } from "../../lib/workspace";
 import { ensureAccountProfile, ensurePartnerProfile } from "../../lib/account";
@@ -22,8 +22,35 @@ export default function LoginPage() {
   const [displayName, setDisplayName] = useState("");
   const [accountType] = useState<"customer" | "partner">("customer");
   const [success, setSuccess] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
+  const isRouting = useRef(false);
+
+  const routeAuthenticatedUser = useCallback(async (user: import("@supabase/supabase-js").User) => {
+    if (isRouting.current) return;
+    isRouting.current = true;
+    setCheckingSession(true);
+
+    try {
+      const profile = await ensureAccountProfile(user);
+      if (profile.type === "partner") {
+        const metadata = user.user_metadata;
+        const partnerCategory = metadata.category === "location" || metadata.category === "photography" || metadata.category === "catering" ? metadata.category : undefined;
+        const partnerCity = typeof metadata.city === "string" ? metadata.city : undefined;
+        await ensurePartnerProfile(user.id, profile.displayName, { city: partnerCity, category: partnerCategory });
+        router.replace("/partner");
+      } else {
+        await ensureWeddingWorkspace(user);
+        router.replace("/dashboard");
+      }
+    } catch (caught) {
+      isRouting.current = false;
+      setCheckingSession(false);
+      setError(authErrorMessage(caught));
+    }
+  }, [router]);
 
   useEffect(() => {
+    let active = true;
     const demoUrl = new URL(window.location.href);
     demoUrl.searchParams.set("demo", "1");
     setPartnerDemoAvailable(isPartnerDemoAllowed(demoUrl));
@@ -41,24 +68,27 @@ export default function LoginPage() {
       setSuccess("E-Mail bestätigt. Ihr könnt euch jetzt anmelden.");
     }
     const supabase = getSupabaseClient();
-    void supabase.auth.getUser().then(({ data }) => {
-      if (data.user) void routeAuthenticatedUser(data.user);
-    });
-  }, [router]);
+    const restoreSession = async () => {
+      const { data, error: sessionError } = await supabase.auth.getUser();
+      if (!active) return;
+      if (sessionError) setError(authErrorMessage(sessionError));
+      if (data.user) {
+        await routeAuthenticatedUser(data.user);
+        return;
+      }
+      setCheckingSession(false);
+    };
 
-  const routeAuthenticatedUser = async (user: import("@supabase/supabase-js").User) => {
-    const profile = await ensureAccountProfile(user);
-    if (profile.type === "partner") {
-      const metadata = user.user_metadata;
-      const partnerCategory = metadata.category === "location" || metadata.category === "photography" || metadata.category === "catering" ? metadata.category : undefined;
-      const partnerCity = typeof metadata.city === "string" ? metadata.city : undefined;
-      await ensurePartnerProfile(user.id, profile.displayName, { city: partnerCity, category: partnerCategory });
-      router.replace("/partner");
-    } else {
-      await ensureWeddingWorkspace(user);
-      router.replace("/dashboard");
-    }
-  };
+    void restoreSession();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) void routeAuthenticatedUser(session.user);
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [routeAuthenticatedUser]);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -104,17 +134,20 @@ export default function LoginPage() {
         <h1 id="login-title">{mode === "signup" ? accountType === "partner" ? "Euer Angebot beginnt hier." : "Eure Planung beginnt hier." : "Willkommen zurück."}</h1>
         <p className={styles.intro}>{mode === "signup" ? accountType === "partner" ? "Erstellt euer Partnerkonto. Danach richtet ihr Unternehmen, Leistungen, Pakete und Verfügbarkeit ein." : "Erstellt euer Kundenkonto, um eure Auswahl zu speichern und Verfügbarkeiten verbindlich zu prüfen." : "Meldet euch an, um eure persönliche Hochzeitsplanung fortzusetzen."}</p>
 
-        {registrationAvailable ? <div className={styles.previewNotice} role="status"><strong>Entwicklungs-Preview</strong><span>Die Kundenregistrierung ist hier zum Testen geöffnet. Partner werden während der limitierten Pilotphase persönlich freigeschaltet.</span></div> : <div className={styles.prelaunch} role="status"><strong>Registrierung noch nicht geöffnet</strong><span>Neue Kundenkonten werden erst zum offiziellen Start freigeschaltet.</span></div>}
+        {checkingSession ? <div className={styles.sessionCheck} role="status"><strong>Angemeldetes Konto wird geprüft …</strong><span>Wenn ihr bereits angemeldet seid, öffnen wir eure Planung automatisch.</span></div> : <>
+          {registrationAvailable ? <div className={styles.previewNotice} role="status"><strong>Entwicklungs-Preview</strong><span>Die Kundenregistrierung ist hier zum Testen geöffnet. Partner werden während der limitierten Pilotphase persönlich freigeschaltet.</span></div> : <div className={styles.prelaunch} role="status"><strong>Registrierung noch nicht geöffnet</strong><span>Neue Kundenkonten werden erst zum offiziellen Start freigeschaltet.</span></div>}
 
-        <form className={styles.form} onSubmit={submit}>
-          {mode === "signup" && <label>Eure Namen<input autoComplete="name" onChange={(event) => setDisplayName(event.target.value)} placeholder="z. B. Emma & Noah" required value={displayName}/></label>}
-          <label>E-Mail-Adresse<input autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder="ihr@beispiel.de" required type="email" value={email}/></label>
-          <label>Passwort<input autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password}/></label>
-          {error && <p className={styles.error} role="alert">{error}</p>}
-          {success && <p className={styles.success} role="status">{success}</p>}
-          <button className={styles.submit} disabled={busy} type="submit">{busy ? "Einen Moment …" : mode === "signup" ? "Konto anlegen" : "Sicher anmelden"}</button>
-        </form>
-        {registrationAvailable && <button className={styles.modeSwitch} onClick={() => { setMode(current => current === "signin" ? "signup" : "signin"); setError(""); setSuccess(""); }} type="button">{mode === "signin" ? "Noch kein Konto? Jetzt starten" : "Bereits ein Konto? Anmelden"}</button>}
+          {registrationAvailable && mode === "signup" && <button className={styles.existingAccount} onClick={() => { setMode("signin"); setError(""); setSuccess(""); }} type="button"><span>Bereits registriert?</span><strong>Jetzt sicher anmelden →</strong></button>}
+          <form className={styles.form} onSubmit={submit}>
+            {mode === "signup" && <label>Eure Namen<input autoComplete="name" onChange={(event) => setDisplayName(event.target.value)} placeholder="z. B. Emma & Noah" required value={displayName}/></label>}
+            <label>E-Mail-Adresse<input autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder="ihr@beispiel.de" required type="email" value={email}/></label>
+            <label>Passwort<input autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password}/></label>
+            {error && <p className={styles.error} role="alert">{error}</p>}
+            {success && <p className={styles.success} role="status">{success}</p>}
+            <button className={styles.submit} disabled={busy} type="submit">{busy ? "Einen Moment …" : mode === "signup" ? "Konto anlegen" : "Sicher anmelden"}</button>
+          </form>
+          {registrationAvailable && <button className={styles.modeSwitch} onClick={() => { setMode(current => current === "signin" ? "signup" : "signin"); setError(""); setSuccess(""); }} type="button">{mode === "signin" ? "Noch kein Konto? Jetzt starten" : "Ich möchte ein neues Kundenkonto anlegen"}</button>}
+        </>}
         {partnerDemoAvailable && <Link className={styles.back} href="/partner?demo=1">Partner-Demo ohne Anmeldung öffnen →</Link>}
         <Link className={styles.back} href="/access">← Kontoart auswählen</Link>
         <Link className={styles.back} href="/">← Zurück zur Startseite</Link>
