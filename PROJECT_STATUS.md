@@ -57,6 +57,7 @@ Technische Grundlage:
 - Das Dashboard ist für schmale Smartphones optimiert: sichere untere Navigation, überlauffreier Kopfbereich, kompaktere Karten und gut erreichbare Sharing-Aktionen mit mindestens 44 Pixel hohen Touch-Zielen.
 - Die Anmeldung für Kunden- und Partnerkonten steht unter `/login` bereit. Auf localhost und dem festen Feature-Preview können beide Kontoarten zur Entwicklungsprüfung selbst registriert werden; die Production-Oberfläche bleibt ohne Registrierungsoption.
 - Der Zugang ist über `/access` eindeutig nach Rolle getrennt: Paare starten ein Kundenkonto, Unternehmen ein Partnerkonto. Bestehende Konten melden sich über denselben Einstieg an und werden danach automatisch zum passenden Kunden- oder Partnerbereich geleitet.
+- Nach einer Wahl unter `/access` ist die Kontoart im folgenden Registrierungsformular bereits festgelegt; die doppelte Rollenwahl erscheint dort nicht erneut. Ein Wechsel erfolgt bewusst über den Rücklink zur Kontoart-Auswahl.
 - Die Startseite verlinkt „Dashboard öffnen“ auf die Kontoart-Auswahl und „Pilotpartner werden“ direkt auf den Partner-Einstieg. In der öffentlichen Suche ist der Partner-Einstieg zusätzlich sichtbar; Kontoaufforderungen für Merkliste und Warenkorb führen gezielt zum Kunden-Einstieg.
 - Nicht angemeldete Dashboard-Aufrufe werden zur Anmeldung weitergeleitet; Sitzungen werden automatisch gespeichert und erneuert.
 - Nach der ersten bestätigten Anmeldung wird automatisch ein persönlicher Hochzeitsbereich mit Eigentümer-Mitgliedschaft angelegt.
@@ -201,6 +202,8 @@ Priorität 3 – Qualität und Betrieb:
 
 ## Letzte Prüfung
 
+- Zugangsauswahl vereinfacht: Ein direkter Kunden- oder Partner-Einstieg setzt die Rolle einmalig vor und blendet die redundante zweite Auswahl aus.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach der Vereinfachung des Rollen-Einstiegs erfolgreich; nur die bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen.
 - Zugangswege zwischen Startseite, öffentlicher Suche, Anmeldung, Kunden-Dashboard und Partnerbereich vereinheitlicht. Die Original-Startseite und die eingebettete rote Ouivio-Wortmarke wurden nicht gestaltet oder verändert; ausschließlich Ziel-URLs bestehender Schaltflächen wurden angepasst und beide HTML-Kopien synchron gehalten.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Einführung der Zugangsauswahl erfolgreich. Die neue Route `/access` wird statisch erzeugt; es bestehen nur die zuvor bekannten Autoprefixer-Hinweise in vorhandenen CSS-Dateien.
 
