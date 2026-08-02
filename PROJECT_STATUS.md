@@ -201,4 +201,6 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Production-Build nach Einführung der Anbieter-Spezialisierung und Portfolioverwaltung erfolgreich; geschützte Startseitenkopien weiterhin bytegleich.
 - Lokale Browserprüfung erfolgreich: Profil zeigt Location, Fotografie und Catering getrennt; der Fotografie-Leistungsbereich zeigt das geschützte Portfolioformular mit Dateiauswahl, Titel und Bildstil ohne Fehleroverlay.
 - Eine parallele Kundendemo unter `/discover?demo=1` zeigt Anbieterprofile aus Kundensicht. Erste vollständig fiktive Profile für Location und Catering enthalten eigens erzeugte Demo-Fotos, Leistungsmerkmale, Preise und Beispielgerichte; aus der Partner-Demo kann direkt zur Kundensicht gewechselt werden.
+- Die Kundendemo enthält zusätzlich das fiktive Profil „Luma Fotografie“ mit eigens erzeugter Portfolioaufnahme, dokumentarischem Bildstil, drei Paketen, Preisrahmen, Begleitdauer und Lieferzeit.
+- Browserprüfung des Fotografenprofils erfolgreich: Karte und Bild laden, die Detailansicht zeigt alle drei Pakete, Vorschauzeit und Galerielieferzeit ohne Fehleroverlay.
 - Lokale Browserprüfung der Kundendemo erfolgreich: beide Anbieterbilder laden, Location- und Cateringkarten sind bedienbar und die Catering-Detailansicht zeigt Beispielgerichte, Kapazität und Anfrageaktion ohne Fehleroverlay.
