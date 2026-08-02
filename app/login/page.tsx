@@ -30,7 +30,13 @@ export default function LoginPage() {
     const demoUrl = new URL(window.location.href);
     demoUrl.searchParams.set("demo", "1");
     setPartnerDemoAvailable(isPartnerDemoAllowed(demoUrl));
-    setRegistrationAvailable(isFeaturePreviewHost(demoUrl));
+    const previewRegistrationAvailable = isFeaturePreviewHost(demoUrl);
+    setRegistrationAvailable(previewRegistrationAvailable);
+    const intent = demoUrl.searchParams.get("intent");
+    if (previewRegistrationAvailable && (intent === "customer" || intent === "partner")) {
+      setAccountType(intent);
+      setMode("signup");
+    }
     if (demoUrl.searchParams.get("confirmed") === "1") {
       setSuccess("E-Mail bestätigt. Ihr könnt euch jetzt anmelden.");
     }
@@ -110,6 +116,7 @@ export default function LoginPage() {
         </form>
         {registrationAvailable && <button className={styles.modeSwitch} onClick={() => { setMode(current => current === "signin" ? "signup" : "signin"); setError(""); setSuccess(""); }} type="button">{mode === "signin" ? "Noch kein Konto? Jetzt starten" : "Bereits ein Konto? Anmelden"}</button>}
         {partnerDemoAvailable && <Link className={styles.back} href="/partner?demo=1">Partner-Demo ohne Anmeldung öffnen →</Link>}
+        <Link className={styles.back} href="/access">← Kontoart auswählen</Link>
         <Link className={styles.back} href="/">← Zurück zur Startseite</Link>
       </section>
       <aside className={styles.promise} aria-label="Ouivio Vorteile">
