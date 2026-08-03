@@ -328,6 +328,7 @@ Priorität 3 – Qualität und Betrieb:
 
 ## Letzter Arbeitsschritt
 
+- Der Anbieterbereich im Kunden-Dashboard hat für jede Warenkorb- und Favoritenkarte jetzt eindeutige Folgeaktionen: „Zur Suche“ beziehungsweise „In Suche ansehen“ führt mit den persönlichen Kriterien zurück zur Anbietersuche; „Entfernen“ löscht ausschließlich den jeweiligen Eintrag und aktualisiert die sichtbare Auswahl sofort. Ein Fehlerzustand verhindert stille, unklare Aktionen.
 - Migration `20260803113000_customer_saved_package_details.sql` im EU-Entwicklungsprojekt ausgeführt. Die Funktion prüft vor jeder Rückgabe die Mitgliedschaft der aktuell angemeldeten Person, ist für `anon` nicht ausführbar und gibt nur die eigenen Favoriten-/Warenkorb-Paketdetails zurück.
 - Ablauf mit dem bestehenden Kundenkonto transaktional geprüft: Das gespeicherte Paket „Demo · Hof Eichenhain“ wird je einmal als Favorit und als Warenkorbposition inklusive Ort, Paket und gewähltem Zeitraum zurückgegeben.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build erfolgreich; nur die drei bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen. Security Advisor geprüft: Der neue, absichtlich nur für `authenticated` ausführbare und intern mit Mitgliedschaftsschutz versehene RPC-Hinweis ist dokumentiert; keine anonymen Rechte wurden ergänzt.
