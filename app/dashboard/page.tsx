@@ -687,7 +687,7 @@ export default function Home() {
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <Link className="logo" href="/" aria-label="Zur Ouivio Startseite">
+        <Link className="logo" href="/index.html#top" aria-label="Zur Ouivio Startseite">
           Ouivio<span>.</span>
         </Link>
         <nav aria-label="Hauptnavigation">
