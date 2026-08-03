@@ -319,3 +319,4 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Production-Build nach Umstellung der Ortsauswahl auf eine Auswahlliste erfolgreich.
 - Migration `20260803103000_wedding_cart_items.sql` im EU-Entwicklungsprojekt ausgeführt: Der neue Warenkorb speichert Paket und Wunschzeitraum pro Hochzeit, mit RLS, Hochzeitsmitgliedschafts-Prüfung und ohne anonyme Rechte. Sicherheitsprüfung bestätigt RLS aktiv, `anon` ohne Leserecht und `authenticated` mit den benötigten Rechten; die Advisor-Hinweise sind unverändert und bereits dokumentiert.
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Trennung von persistentem Warenkorb und Merkliste erfolgreich. Die drei bestehenden Autoprefixer-Hinweise bleiben unverändert.
+- Die Anbieter-Kennzahl auf der Kundenübersicht zeigt ausschließlich den Warenkorb; die separate Merkliste bleibt als eigene Übersichtskarte darunter sichtbar.
