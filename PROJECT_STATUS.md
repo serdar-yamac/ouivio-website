@@ -324,7 +324,7 @@ Priorität 3 – Qualität und Betrieb:
 - Favoriten und Warenkorb laden ihre sichtbaren Paket- und Anbieterdaten im Kunden-Dashboard jetzt über eine ausschließlich für das eigene Hochzeitskonto ausführbare Datenbankfunktion. Dadurch bleiben Partnerprofile weiterhin privat, während selbst gespeicherte Live-Angebote zuverlässig angezeigt werden.
 - Sämtliche Ouivio-Wortmarken in den interaktiven Bereichen verlinken explizit auf `/index.html#top`. Ein vorheriger Pilotpartner-Anker kann so beim Rückweg zur Startseite nicht mehr übernommen werden.
 - Die Kontoart-Auswahl bietet einen klar beschrifteten Einstieg „Anbieter-Demo ohne Anmeldung öffnen“. Er verlinkt ausschließlich auf den bereits bestehenden, auf localhost und Feature-Preview begrenzten Demomodus.
-- Das Partner-Dashboard folgt dem Direktbuchungsmodell: Der Navigationspunkt „Anfragen“ wurde durch „Nachrichten“ ersetzt. Die Demo enthält eine bedienbare Unterhaltung mit einem gebuchten Paar und eine Video-Terminfindung; vorgeschlagene Demo-Calls erscheinen als vorläufiger Termin im Partnerkalender. Echte Nachrichten werden erst an die jeweiligen bestätigten Buchungen angebunden.
+- Das Partner-Dashboard folgt dem Direktbuchungsmodell: Der Navigationspunkt „Anfragen“ wurde durch „Nachrichten“ ersetzt, erscheint jedoch ausschließlich, sobald mindestens eine aktive Buchung vorliegt. Die Demo enthält dann eine bedienbare Unterhaltung mit dem gebuchten Paar und eine Video-Terminfindung; vorgeschlagene Demo-Calls erscheinen als vorläufiger Termin im Partnerkalender. Echte Nachrichten werden erst an die jeweiligen bestätigten Buchungen angebunden.
 
 ## Letzter Arbeitsschritt
 
