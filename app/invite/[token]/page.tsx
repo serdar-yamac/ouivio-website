@@ -43,11 +43,11 @@ export default function InvitationPage() {
   };
 
   if (loading) return <main className={styles.state}><span>Ouivio</span><p>Einladung wird geöffnet …</p></main>;
-  if (!invitation) return <main className={styles.state}><span>Ouivio</span><h1>Einladung nicht gefunden</h1><p>{error || "Bitte prüfe, ob der vollständige Einladungslink geöffnet wurde."}</p><Link href="/">Zur Ouivio Startseite</Link></main>;
+  if (!invitation) return <main className={styles.state}><span>Ouivio</span><h1>Einladung nicht gefunden</h1><p>{error || "Bitte prüfe, ob der vollständige Einladungslink geöffnet wurde."}</p><Link href="/index.html#top">Zur Ouivio Startseite</Link></main>;
 
   return <main className={styles.page}>
     <section className={styles.card} aria-labelledby="invitation-title">
-      <Link className={styles.logo} href="/">Ouivio<span>.</span></Link>
+      <Link className={styles.logo} href="/index.html#top">Ouivio<span>.</span></Link>
       <p className={styles.kicker}>Persönliche Einladung</p>
       <h1 id="invitation-title">Du bist eingeladen,<br/>{invitation.guestName}</h1>
       <p className={styles.message}><strong>{invitation.partnerNames}</strong> möchten diesen besonderen Tag mit dir feiern.</p>
