@@ -183,6 +183,7 @@ export default function LoginPage() {
 
         {checkingSession ? <div className={styles.sessionCheck} role="status"><strong>Angemeldetes Konto wird geprüft …</strong><span>Wenn ihr bereits angemeldet seid, öffnen wir eure Planung automatisch.</span></div> : activeAccountEmail ? <>
           <div className={styles.prelaunch} role="status"><strong>Ihr seid bereits als Kunde angemeldet</strong><span>{activeAccountEmail} ist ein Kundenkonto. Für den Partner-Test benötigt ihr ein separates Konto mit eigener E-Mail-Adresse.</span></div>
+          <Link className={styles.dashboardShortcut} href="/dashboard">Zum Kunden-Dashboard →</Link>
           <button className={styles.existingAccount} disabled={busy} onClick={() => void signOutForPartnerRegistration()} type="button"><span>Kundenkonto auf diesem Gerät abmelden</span><strong>{busy ? "Einen Moment …" : "Partnerkonto anlegen →"}</strong></button>
           {error && <p className={styles.error} role="alert">{error}</p>}
         </> : <>
