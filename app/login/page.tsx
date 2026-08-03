@@ -84,6 +84,11 @@ export default function LoginPage() {
       if (!active) return;
       if (sessionError) setError(authErrorMessage(sessionError));
       if (data.user) {
+        if (intent === "partner") {
+          setActiveAccountEmail(data.user.email || "einem bestehenden Konto");
+          setCheckingSession(false);
+          return;
+        }
         await routeAuthenticatedUser(data.user, intent === "partner");
         return;
       }
@@ -92,7 +97,14 @@ export default function LoginPage() {
 
     void restoreSession();
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) void routeAuthenticatedUser(session.user, intent === "partner");
+      if (session?.user) {
+        if (intent === "partner") {
+          setActiveAccountEmail(session.user.email || "einem bestehenden Konto");
+          setCheckingSession(false);
+          return;
+        }
+        void routeAuthenticatedUser(session.user);
+      }
     });
 
     return () => {
