@@ -323,6 +323,7 @@ Priorität 3 – Qualität und Betrieb:
 - Die öffentliche Suche erkennt eine bestehende Ouivio-Sitzung und zeigt oben rechts einen sichtbaren Konto-Einstieg. Er führt anhand des geschützten Kontoprofils Kunden in ihr Kunden-Dashboard und Partner in ihr Partner-Dashboard.
 - Favoriten und Warenkorb laden ihre sichtbaren Paket- und Anbieterdaten im Kunden-Dashboard jetzt über eine ausschließlich für das eigene Hochzeitskonto ausführbare Datenbankfunktion. Dadurch bleiben Partnerprofile weiterhin privat, während selbst gespeicherte Live-Angebote zuverlässig angezeigt werden.
 - Sämtliche Ouivio-Wortmarken in den interaktiven Bereichen verlinken explizit auf `/index.html#top`. Ein vorheriger Pilotpartner-Anker kann so beim Rückweg zur Startseite nicht mehr übernommen werden.
+- Die Kontoart-Auswahl bietet einen klar beschrifteten Einstieg „Anbieter-Demo ohne Anmeldung öffnen“. Er verlinkt ausschließlich auf den bereits bestehenden, auf localhost und Feature-Preview begrenzten Demomodus.
 
 ## Letzter Arbeitsschritt
 
