@@ -1,6 +1,6 @@
 # Ouivio – Projektstatus
 
-Stand: 3. August 2026
+Stand: 4. August 2026
 
 Branch: `feat/ouivio-core-foundation`
 
@@ -328,6 +328,8 @@ Priorität 3 – Qualität und Betrieb:
 
 ## Letzter Arbeitsschritt
 
+- Apple Calendar synchronisiert nun auf ausdrücklichen Klick eines verbundenen Partners belegte iCloud-Zeiten für den Zeitraum von 30 Tagen rückwirkend bis 24 Monate voraus in den persönlichen Ouivio-Kalender. Importierte Einträge werden als „Blockiert · Apple Calendar“ gespeichert; private Apple-Titel, Orte und Notizen werden absichtlich nicht übernommen. Ein erneuter Abgleich ersetzt ausschließlich frühere Apple-Importe desselben Partners und lässt Ouivio-Termine und Buchungen unverändert. Ouivio bleibt strikt einseitig lesend und schreibt niemals nach Apple zurück. Die Verbindung ist über eine eigentümergebundene, nur für `authenticated` ausführbare Supabase-Funktion geschützt; verschlüsselte Zugangsdaten verlassen den privaten Speicher nicht. Wiederkehrende Apple-Termine werden in dieser ersten Version noch nicht expandiert; eine automatische Hintergrund-Synchronisation ist ebenfalls noch nicht aktiv.
+- Die Partneroberfläche erkennt eine gespeicherte Apple-Verbindung, zeigt dann den eindeutigen Schritt „Jetzt synchronisieren“, aktualisiert anschließend den sichtbaren Ouivio-Kalender und erklärt die Einweg- und Datenschutzgrenzen. TypeScript-Prüfung und optimierter Next.js-Production-Build erfolgreich; nur die drei bekannten CSS-Autoprefixer-Hinweise bleiben bestehen.
 - Apple-Calendar-Verbindung speichert nach einer erfolgreichen Apple-Prüfung das App-spezifische Passwort erstmals verschlüsselt (AES-256-GCM mit einem ausschließlich im Feature-Preview hinterlegten Vercel-Geheimnis). Eine eigentümergebundene, nur für `authenticated` ausführbare Supabase-Funktion legt die private Verbindungsreferenz an; weder Browser noch Datenbank-Tabellen enthalten das Passwort im Klartext. Die automatische Ereignisübernahme aus iCloud bleibt der folgende Umsetzungsschritt; die bestehende Verbindung ist dafür vorbereitet.
 - Apple-Calendar-Test korrigiert: Die serverseitige Partnerprüfung übernimmt nun die bestätigte Supabase-Sitzung auch für die anschließende, RLS-geschützte Profilsuche. Zuvor lief diese einzelne Datenbankabfrage anonym und brach deshalb vor dem Apple-Test mit HTTP 403 ab – unabhängig davon, ob Apple-ID und App-Passwort korrekt waren. Der frühere Einmal-Test speicherte keine Zugangsdaten; die neue verschlüsselte Verbindung ist oben dokumentiert.
 - Bestätigte E-Mail-Registrierungen führen jetzt ohne weiteren Klick direkt in den Anmelde-Modus. Falls der Bestätigungslink auf einem anderen Gerät geöffnet wird und deshalb keine Browser-Sitzung übernommen werden kann, erscheint sofort die sichere Passwort-Anmeldung statt erneut das Registrierungsformular; bei übernommener Sitzung öffnet Ouivio weiterhin automatisch den passenden Kunden- oder Partnerbereich.
