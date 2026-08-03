@@ -10,7 +10,13 @@ export async function POST(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!accessToken || !supabaseUrl || !publishableKey) return NextResponse.json({ message: "Bitte meldet euch erneut an." }, { status: 401 });
-  const supabase = createClient(supabaseUrl, publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const supabase = createClient(supabaseUrl, publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    // Keep the caller's identity for the RLS-protected partner lookup below.
+    // getUser(accessToken) validates the token, but does not implicitly add it
+    // to subsequent database requests made by this separate server client.
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
   const { data: userData } = await supabase.auth.getUser(accessToken);
   if (!userData.user) return NextResponse.json({ message: "Eure Sitzung ist abgelaufen. Bitte meldet euch erneut an." }, { status: 401 });
   const { data: partner } = await supabase.from("partner_profiles").select("id").eq("owner_id", userData.user.id).maybeSingle();
