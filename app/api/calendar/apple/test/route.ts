@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createCipheriv, randomBytes } from "crypto";
 
 export const runtime = "nodejs";
 const appleCalendarEndpoint = "https://caldav.icloud.com/";
@@ -31,6 +32,16 @@ export async function POST(request: NextRequest) {
     const response = await fetch(appleCalendarEndpoint, { method: "PROPFIND", headers: { Authorization: `Basic ${credentials}`, Depth: "0", "Content-Type": "application/xml; charset=utf-8" }, body: "<?xml version=\"1.0\" encoding=\"utf-8\" ?><propfind xmlns=\"DAV:\"><prop><current-user-principal/></prop></propfind>", cache: "no-store" });
     if (response.status === 401 || response.status === 403) return NextResponse.json({ message: "Apple-ID oder App-spezifisches Passwort wurden nicht akzeptiert." }, { status: 400 });
     if (!response.ok) return NextResponse.json({ message: "Apple Calendar ist gerade nicht erreichbar. Bitte versucht es später noch einmal." }, { status: 502 });
-    return NextResponse.json({ ok: true });
+    const encryptionKey = process.env.APPLE_CALENDAR_ENCRYPTION_KEY;
+    if (!encryptionKey) return NextResponse.json({ message: "Die sichere Kalenderverbindung wird gerade bereitgestellt. Bitte versucht es in einer Minute erneut." }, { status: 503 });
+    const key = Buffer.from(encryptionKey, "base64");
+    if (key.length !== 32) return NextResponse.json({ message: "Die sichere Kalenderverbindung ist noch nicht korrekt eingerichtet." }, { status: 503 });
+    const iv = randomBytes(12);
+    const cipher = createCipheriv("aes-256-gcm", key, iv);
+    const ciphertext = Buffer.concat([cipher.update(JSON.stringify({ appleId, appPassword }), "utf8"), cipher.final()]);
+    const encryptedCredentials = `v1.${iv.toString("base64url")}.${ciphertext.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}`;
+    const { error: saveError } = await supabase.rpc("save_apple_calendar_connection", { p_encrypted_credentials: encryptedCredentials, p_account_label: appleId });
+    if (saveError) return NextResponse.json({ message: "Die Verbindung konnte nicht sicher gespeichert werden. Bitte versucht es erneut." }, { status: 500 });
+    return NextResponse.json({ ok: true, connected: true });
   } catch { return NextResponse.json({ message: "Apple Calendar konnte nicht erreicht werden. Bitte prüft eure Verbindung und versucht es erneut." }, { status: 502 }); }
 }
