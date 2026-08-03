@@ -1,6 +1,6 @@
 # Ouivio – Projektstatus
 
-Stand: 2. August 2026
+Stand: 3. August 2026
 
 Branch: `feat/ouivio-core-foundation`
 
@@ -99,6 +99,7 @@ Technische Grundlage:
 - Der Checkout enthält vorbereitete, klar noch nicht aktivierte Zahlungsarten für Karte/Digital Wallet, PayPal und SEPA-Überweisung. Sie fragen keine Zahlungsdaten ab, führen keine Transaktion aus und dienen bis zur bewussten Stripe-/Zahlungsanbieter-Anbindung ausschließlich als Produktvorschau.
 - Die Anmeldung prüft beim Öffnen und bei einer wiederhergestellten Supabase-Sitzung automatisch das bestehende Konto und leitet Kunden direkt in ihre Planung beziehungsweise Partner in ihren Partnerbereich. Ist keine Sitzung vorhanden, ist der sichtbare Wechsel von der Registrierung zur Anmeldung eindeutig hervorgehoben; eine bloß im Browser vorausgefüllte E-Mail-Adresse wird aus Sicherheitsgründen nicht als Anmeldung behandelt.
 - Angemeldete Kunden können veröffentlichte Live-Pakete aus der Suche in einer persönlichen Merkliste speichern oder daraus entfernen. Die Merkliste ist im Anbieterbereich des Kunden-Dashboards sichtbar und wird über eigene, mit der Hochzeitsmitgliedschaft geschützte Datenbankzeilen geräteübergreifend gespeichert. Statische Demo-Karten bleiben ausdrücklich nicht speicherbar.
+- Angemeldete Kunden können veröffentlichte Live-Pakete zusätzlich, getrennt von der Merkliste, für ihren gewählten Zeitraum in einen persistenten Warenkorb legen. Der Warenkorb erscheint im Anbieterbereich des Kunden-Dashboards vor den Favoriten und ist ausdrücklich noch keine Reservierung, Buchung oder Zahlung.
 - Der Kundenbereich trennt nun konsequent persönliche Daten von Beispieldaten: Paarname, Hochzeitstermin und Wunschort werden in der bestehenden persönlichen Hochzeit gespeichert und steuern Titel, Countdown und Orientierung im Dashboard.
 - Kunden können eigene Kalendereinträge mit Beginn, optionalem Ende, Ort und Notiz anlegen, bearbeiten und löschen. Die Einträge liegen in der bereits vorhandenen, mit Hochzeitsmitgliedschaft geschützten `events`-Tabelle.
 - Das Kunden-Dashboard zeigt keine erfundenen Matches, Anbieter oder Kalendereinträge mehr. Die Anbieteransicht enthält ausschließlich selbst gemerkte Live-Angebote; ohne eigene Daten führt ein klarer Leerzustand zur Suche. Eine bewusst gestartete lokale Checkout-Demo bleibt separat als Demo markiert.
@@ -316,3 +317,5 @@ Priorität 3 – Qualität und Betrieb:
 - Migration `20260802190000_public_catalog_date_availability.sql` im EU-Entwicklungsprojekt angewendet und geprüft: die Katalogfunktion akzeptiert den Wunschzeitpunkt und filtert belegte Ressourcen ohne zusätzliche Dateneinsicht.
 - Zehn eindeutig markierte Demo-Partner, zehn veröffentlichte Pakete und zehn unterschiedliche Demo-Belegungsfenster erstellt und geprüft. Für Köln liefert die öffentliche Katalogfunktion am 19.06.2027 zwei freie Angebote, am 20.06.2027 vier – die Filterung reagiert damit auf den gewählten Termin.
 - TypeScript-Prüfung und optimierter Production-Build nach Umstellung der Ortsauswahl auf eine Auswahlliste erfolgreich.
+- Migration `20260803103000_wedding_cart_items.sql` im EU-Entwicklungsprojekt ausgeführt: Der neue Warenkorb speichert Paket und Wunschzeitraum pro Hochzeit, mit RLS, Hochzeitsmitgliedschafts-Prüfung und ohne anonyme Rechte. Sicherheitsprüfung bestätigt RLS aktiv, `anon` ohne Leserecht und `authenticated` mit den benötigten Rechten; die Advisor-Hinweise sind unverändert und bereits dokumentiert.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach Trennung von persistentem Warenkorb und Merkliste erfolgreich. Die drei bestehenden Autoprefixer-Hinweise bleiben unverändert.
