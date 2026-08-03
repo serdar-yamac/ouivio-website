@@ -38,7 +38,7 @@ export default function LumaProfile() {
 
   return <main className={styles.page}>
     <header className={styles.header}>
-      <Link className={styles.brand} href="/">Ouivio<span>.</span></Link>
+      <Link className={styles.brand} href="/index.html#top">Ouivio<span>.</span></Link>
       <Link className={styles.back} href="/discover?demo=1">← Alle Anbieter</Link>
       <Link className={styles.cartLink} href={`/discover/cart?demo=1&package=${encodeURIComponent(selectedPackage)}&date=${weddingDate}`}>Warenkorb</Link>
       <button aria-pressed={saved} onClick={() => setSaved(value => !value)}>{saved ? "♥ Gemerkt" : "♡ Merken"}</button>
