@@ -558,6 +558,89 @@ button.card {
   background: #fff0f2;
   color: var(--red);
 }
+
+/* Personal customer workspace */
+.discover-button,
+.primary-button,
+.secondary-button,
+.logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 10px 15px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.discover-button,
+.primary-button {
+  border: 0;
+  background: var(--red);
+  color: #fff;
+}
+.discover-button:hover,
+.primary-button:hover { background: var(--red-dark); }
+.secondary-button,
+.logout-button {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+}
+.planning-grid,
+.budget-summary-grid,
+.budget-manage-grid,
+.guest-manage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+.plan-setup { margin-bottom: 18px; max-width: 100%; }
+.plan-fields,
+.amount-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.amount-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.task-form label,
+.plan-setup label,
+.budget-total-form label,
+.budget-item-form label,
+.guest-form label {
+  display: grid;
+  gap: 7px;
+  margin-top: 13px;
+  color: #5f5753;
+  font-size: 12px;
+  font-weight: 800;
+}
+.task-form input,
+.plan-setup input,
+.budget-total-form input,
+.budget-item-form input,
+.budget-item-form select,
+.guest-form input,
+.guest-form select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #ded6d1;
+  border-radius: 11px;
+  background: #fff;
+  padding: 10px 12px;
+  color: var(--ink);
+}
+.setup-copy { max-width: 700px; margin: 0 0 7px; color: var(--muted); line-height: 1.55; }
+.storage-badge { border-radius: 999px; background: #eaf7ef; color: var(--green); padding: 6px 9px; font-size: 10px; font-weight: 850; white-space: nowrap; }
+.form-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 18px; }
+.sync-error { color: #b70d28; font-size: 13px; }
+.task-actions { margin-left: auto; display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+.task-actions button { border: 0; background: transparent; color: var(--red); font-size: 12px; font-weight: 800; cursor: pointer; padding: 6px 0; }
+.task-actions button.danger { color: #8d5d55; }
+.empty-vendor-card { grid-column: 1 / -1; max-width: 540px; text-align: center; padding: 48px 30px; }
+.empty-vendor-card > span { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 16px; border-radius: 50%; background: #fff0f2; color: var(--red); font-size: 26px; }
+.empty-vendor-card p { color: var(--muted); line-height: 1.55; }
+.empty-vendor-card .primary-button { margin-top: 8px; }
+.demo-event { background: #fff8f8; }
 @media (max-width: 1000px) {
   .app-shell {
     grid-template-columns: 86px 1fr;
@@ -583,7 +666,11 @@ button.card {
     grid-column: 1/-1;
   }
   .detail-grid,
-  .budget-grid {
+  .budget-grid,
+  .planning-grid,
+  .budget-summary-grid,
+  .budget-manage-grid,
+  .guest-manage-grid {
     grid-template-columns: 1fr;
   }
   .vendor-grid {
@@ -655,16 +742,7 @@ button.card {
   .topbar .avatar {
     display: none;
   }
-  .search {
-    min-width: 0;
-    flex: 1;
-    margin-right: 0;
-    padding-inline: 12px;
-  }
-  .search input {
-    min-width: 0;
-    width: 100%;
-  }
+  .discover-button { margin-right: auto; min-height: 38px; padding-inline: 13px; font-size: 12px; }
   .logout-button {
     flex: 0 0 auto;
   }
@@ -720,6 +798,9 @@ button.card {
     font-size: 14px;
     line-height: 1.35;
   }
+  .event .task-actions { width: 100%; margin-left: 62px; }
+  .plan-fields,
+  .amount-fields { grid-template-columns: 1fr; }
   .page {
     padding-top: 18px;
   }
