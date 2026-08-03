@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   createBudgetItem,
   deleteBudgetItem,
@@ -32,6 +32,18 @@ import { ensureWeddingWorkspace } from "../../lib/workspace";
 import { ensureAccountProfile } from "../../lib/account";
 import { readDemoBooking, type DemoBooking } from "../../lib/demo-booking";
 import { fetchFavoritePackages, type FavoritePackage } from "../../lib/favorite-packages";
+import {
+  createCustomerEvent,
+  deleteCustomerEvent,
+  fetchCustomerEvents,
+  updateCustomerEvent,
+  type CustomerEvent,
+} from "../../lib/customer-events";
+import {
+  fetchWeddingPlan,
+  updateWeddingPlan,
+  type WeddingPlan,
+} from "../../lib/wedding-plan";
 
 const sections = [
   "Übersicht",
@@ -42,30 +54,6 @@ const sections = [
   "Gäste",
 ] as const;
 type Section = (typeof sections)[number];
-
-const vendors = [
-  {
-    icon: "📷",
-    name: "Luma Fotografie",
-    meta: "Fotografie · Köln",
-    match: 96,
-    price: "ab 2.400 €",
-  },
-  {
-    icon: "♫",
-    name: "DJ Marcelle",
-    meta: "DJ · Düsseldorf",
-    match: 93,
-    price: "ab 1.350 €",
-  },
-  {
-    icon: "✿",
-    name: "Maison Fleur",
-    meta: "Floristik · Bonn",
-    match: 91,
-    price: "ab 1.800 €",
-  },
-];
 
 const publicAppUrl =
   "https://ouivio-website-git-feat-ouivio-core-foundation-ouivio.vercel.app";
@@ -92,7 +80,6 @@ export default function Home() {
   const [tasksLoading, setTasksLoading] = useState(true);
   const [taskSaving, setTaskSaving] = useState(false);
   const [taskError, setTaskError] = useState("");
-  const [query, setQuery] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskMeta, setTaskMeta] = useState("");
   const [taskDueDate, setTaskDueDate] = useState("");
@@ -122,6 +109,22 @@ export default function Home() {
   const [copiedGuestId, setCopiedGuestId] = useState<string | null>(null);
   const [demoBooking, setDemoBooking] = useState<DemoBooking | null>(null);
   const [favoritePackages, setFavoritePackages] = useState<FavoritePackage[]>([]);
+  const [weddingPlan, setWeddingPlan] = useState<WeddingPlan | null>(null);
+  const [partnerNamesInput, setPartnerNamesInput] = useState("");
+  const [weddingDateInput, setWeddingDateInput] = useState("");
+  const [locationInput, setLocationInput] = useState("");
+  const [planSaving, setPlanSaving] = useState(false);
+  const [planError, setPlanError] = useState("");
+  const [customerEvents, setCustomerEvents] = useState<CustomerEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventSaving, setEventSaving] = useState(false);
+  const [eventError, setEventError] = useState("");
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventStartsAt, setEventStartsAt] = useState("");
+  const [eventEndsAt, setEventEndsAt] = useState("");
+  const [eventLocation, setEventLocation] = useState("");
+  const [eventNotes, setEventNotes] = useState("");
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const done = tasks.filter((task) => task.done).length;
   const progress = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
   const plannedBudget = budgetItems.reduce(
@@ -143,15 +146,9 @@ export default function Home() {
   const guestProgress = guests.length
     ? Math.round((acceptedGuests / guests.length) * 100)
     : 0;
-  const filteredVendors = useMemo(
-    () =>
-      vendors.filter((vendor) =>
-        `${vendor.name} ${vendor.meta}`
-          .toLowerCase()
-          .includes(query.toLowerCase()),
-      ),
-    [query],
-  );
+  const weddingCountdown = weddingPlan?.weddingDate
+    ? Math.max(0, Math.ceil((new Date(`${weddingPlan.weddingDate}T12:00:00`).getTime() - startOfToday().getTime()) / 86_400_000))
+    : null;
 
   const toggleTask = async (id: string) => {
     const currentTask = tasks.find((task) => task.id === id);
@@ -367,6 +364,98 @@ export default function Home() {
     setEditingGuestId(null);
   };
 
+  const submitWeddingPlan = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!weddingId || planSaving) return;
+    setPlanError("");
+    setPlanSaving(true);
+    try {
+      const savedPlan = await updateWeddingPlan(weddingId, {
+        partnerNames: partnerNamesInput.trim() || "Unsere Hochzeit",
+        weddingDate: weddingDateInput || null,
+        location: locationInput.trim(),
+      });
+      setWeddingPlan(savedPlan);
+      setPartnerNamesInput(savedPlan.partnerNames);
+      setWeddingDateInput(savedPlan.weddingDate ?? "");
+      setLocationInput(savedPlan.location);
+    } catch {
+      setPlanError("Eure Planungsdaten konnten nicht gespeichert werden.");
+    } finally {
+      setPlanSaving(false);
+    }
+  };
+
+  const resetEventForm = () => {
+    setEventTitle("");
+    setEventStartsAt("");
+    setEventEndsAt("");
+    setEventLocation("");
+    setEventNotes("");
+    setEditingEventId(null);
+  };
+
+  const submitCustomerEvent = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!weddingId || eventSaving || !eventTitle.trim() || !eventStartsAt) return;
+    setEventError("");
+    setEventSaving(true);
+    try {
+      if (editingEventId) {
+        const current = customerEvents.find((item) => item.id === editingEventId);
+        if (!current) return;
+        const saved = await updateCustomerEvent({
+          ...current,
+          title: eventTitle.trim(),
+          startsAt: localDateTimeToIso(eventStartsAt),
+          endsAt: eventEndsAt ? localDateTimeToIso(eventEndsAt) : null,
+          location: eventLocation.trim(),
+          notes: eventNotes.trim(),
+        });
+        setCustomerEvents((items) => items.map((item) => item.id === saved.id ? saved : item));
+      } else {
+        const saved = await createCustomerEvent(weddingId, {
+          title: eventTitle.trim(),
+          startsAt: localDateTimeToIso(eventStartsAt),
+          endsAt: eventEndsAt ? localDateTimeToIso(eventEndsAt) : null,
+          location: eventLocation.trim(),
+          notes: eventNotes.trim(),
+        });
+        setCustomerEvents((items) => [...items, saved].sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
+      }
+      resetEventForm();
+    } catch {
+      setEventError("Der Termin konnte nicht gespeichert werden.");
+    } finally {
+      setEventSaving(false);
+    }
+  };
+
+  const editCustomerEvent = (event: CustomerEvent) => {
+    setEditingEventId(event.id);
+    setEventTitle(event.title);
+    setEventStartsAt(isoToLocalDateTime(event.startsAt));
+    setEventEndsAt(event.endsAt ? isoToLocalDateTime(event.endsAt) : "");
+    setEventLocation(event.location);
+    setEventNotes(event.notes);
+  };
+
+  const removeCustomerEvent = async (id: string) => {
+    if (eventSaving) return;
+    const before = customerEvents;
+    setEventSaving(true);
+    setCustomerEvents((items) => items.filter((item) => item.id !== id));
+    try {
+      await deleteCustomerEvent(id);
+      if (editingEventId === id) resetEventForm();
+    } catch {
+      setCustomerEvents(before);
+      setEventError("Der Termin konnte nicht gelöscht werden.");
+    } finally {
+      setEventSaving(false);
+    }
+  };
+
   const submitGuest = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = guestName.trim();
@@ -484,11 +573,13 @@ export default function Home() {
           return;
         }
         const workspaceId = await ensureWeddingWorkspace(data.user);
-        const [cloudTasks, cloudBudget, cloudGuests, cloudFavorites] = await Promise.all([
+        const [cloudTasks, cloudBudget, cloudGuests, cloudFavorites, cloudPlan, cloudEvents] = await Promise.all([
           fetchTasks(workspaceId),
           fetchBudget(workspaceId),
           fetchGuests(workspaceId),
           fetchFavoritePackages(workspaceId),
+          fetchWeddingPlan(workspaceId),
+          fetchCustomerEvents(workspaceId),
         ]);
         if (!activeSubscription) return;
         setWeddingId(workspaceId);
@@ -500,7 +591,13 @@ export default function Home() {
         setBudgetLoading(false);
         setGuests(cloudGuests);
         setFavoritePackages(cloudFavorites);
+        setWeddingPlan(cloudPlan);
+        setPartnerNamesInput(cloudPlan.partnerNames);
+        setWeddingDateInput(cloudPlan.weddingDate ?? "");
+        setLocationInput(cloudPlan.location);
+        setCustomerEvents(cloudEvents);
         setGuestsLoading(false);
+        setEventsLoading(false);
         setUserEmail(data.user.email ?? "Ouivio Konto");
         setAuthReady(true);
       } catch {
@@ -508,6 +605,7 @@ export default function Home() {
           setTasksLoading(false);
           setBudgetLoading(false);
           setGuestsLoading(false);
+          setEventsLoading(false);
           setAuthError(
             "Der persönliche Workspace konnte noch nicht geladen werden.",
           );
@@ -623,14 +721,9 @@ export default function Home() {
             <small>Wedding workspace</small>
             <strong>{active}</strong>
           </div>
-          <label className="search">
-            <span>⌕</span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Suchen …"
-            />
-          </label>
+          <Link className="discover-button" href="/discover">
+            Anbieter entdecken →
+          </Link>
           <button className="logout-button" onClick={signOut} type="button">
             Abmelden
           </button>
@@ -644,24 +737,25 @@ export default function Home() {
             {demoBooking && <section className="card" style={{ marginBottom: 22, borderColor: "#f1c6cd", background: "#fffafa", display: "flex", gap: 24, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }} role="status"><div><small style={{ color: "#df1632", fontWeight: 800 }}>CHECKOUT-DEMO · NUR DIESES GERÄT</small><h2 style={{ margin: "6px 0" }}>Auswahl in eure Planung übernommen</h2><p style={{ margin: 0, color: "#6f6963" }}>{demoBooking.items.map((item) => item.name).join(" · ")} · {new Date(`${demoBooking.startDate}T12:00:00`).toLocaleDateString("de-DE")}</p></div><button className="primary-button" onClick={() => setActive("Budget")}>Demo-Budget ansehen →</button></section>}
             <section className="hero">
               <div>
-                <p className="eyebrow">Guten Morgen, ihr zwei</p>
+                <p className="eyebrow">Eure persönliche Hochzeitsplanung</p>
                 <h1>
-                  Eure Hochzeit.
+                  {weddingPlan?.partnerNames || "Eure Hochzeit."}
                   <br />
                   Ein klarer Plan.
                 </h1>
                 <p>
-                  Alles Wichtige an einem Ort – von der ersten Idee bis zum
-                  letzten Tanz.
+                  {weddingPlan?.location
+                    ? `Alles für eure Hochzeit in ${weddingPlan.location} – von der ersten Idee bis zum letzten Tanz.`
+                    : "Legt Termin und Ort fest – danach begleitet euch Ouivio durch jeden nächsten Schritt."}
                 </p>
                 <button onClick={() => setActive("Planung")}>
-                  Planung fortsetzen <span>→</span>
+                  {weddingPlan?.weddingDate ? "Planung fortsetzen" : "Planung einrichten"} <span>→</span>
                 </button>
               </div>
               <div className="hero-side">
                 <p>Noch</p>
-                <strong>379</strong>
-                <span>Tage bis zu eurem Ja</span>
+                <strong>{weddingCountdown ?? "—"}</strong>
+                <span>{weddingCountdown === null ? "Termin noch festlegen" : "Tage bis zu eurem Ja"}</span>
                 <div>
                   <Ring value={progress} />
                   <p>
@@ -697,12 +791,11 @@ export default function Home() {
                 onClick={() => setActive("Anbieter")}
               >
                 <span>Anbieter</span>
-                <strong>3 Matches</strong>
-                <small>Für euch vorausgewählt</small>
+                <strong>{favoritePackages.length}</strong>
+                <small>{favoritePackages.length === 1 ? "Angebot gemerkt" : "Angebote gemerkt"}</small>
                 <div className="faces">
-                  <i>📷</i>
-                  <i>♫</i>
-                  <i>✿</i>
+                  <i>♥</i>
+                  <i>⌕</i>
                 </div>
               </button>
             </section>
@@ -746,24 +839,10 @@ export default function Home() {
               </article>
               <article className="card">
                 <div className="card-head">
-                  <div>
-                    <small>Ouivio Auswahl</small>
-                    <h2>Beste Matches</h2>
-                  </div>
-                  <button onClick={() => setActive("Anbieter")}>
-                    Entdecken →
-                  </button>
+                  <div><small>Ouivio Auswahl</small><h2>Merkliste</h2></div>
+                  <button onClick={() => router.push("/discover")}>Anbieter entdecken →</button>
                 </div>
-                {vendors.slice(0, 2).map((vendor) => (
-                  <div className="row vendor" key={vendor.name}>
-                    <span className="vendor-icon">{vendor.icon}</span>
-                    <span>
-                      <strong>{vendor.name}</strong>
-                      <small>{vendor.meta}</small>
-                    </span>
-                    <b>{vendor.match}%</b>
-                  </div>
-                ))}
+                {favoritePackages.length === 0 ? <p className="empty-state">Noch keine Angebote gemerkt. Entdeckt passende Anbieter über die Suche.</p> : favoritePackages.slice(0, 2).map((favorite) => <div className="row vendor" key={favorite.packageId}><span className="vendor-icon">♥</span><span><strong>{favorite.partnerName}</strong><small>{favorite.serviceType} · {favorite.city}</small></span><b>Gemerkt</b></div>)}
               </article>
             </section>
           </>
@@ -774,6 +853,17 @@ export default function Home() {
             title="Planung"
             intro="Euer roter Faden bis zum Hochzeitstag. Erstellt Aufgaben, setzt Termine und behaltet jeden Meilenstein im Blick."
           >
+            <form className="card plan-setup" onSubmit={submitWeddingPlan}>
+              <div className="card-head"><div><small>Grundlage eurer Suche</small><h2>Eure Hochzeit einrichten</h2></div><span className="storage-badge">Synchronisiert</span></div>
+              <p className="setup-copy">Diese Angaben gehören nur zu eurer Planung. Sie ersetzen die bisherigen Platzhalter im Dashboard und machen die Suche später schneller.</p>
+              <div className="plan-fields">
+                <label>Ihr als Paar<input maxLength={160} onChange={(event) => setPartnerNamesInput(event.target.value)} placeholder="Zum Beispiel: Sera & Serdar" value={partnerNamesInput}/></label>
+                <label>Hochzeitstermin<input onChange={(event) => setWeddingDateInput(event.target.value)} type="date" value={weddingDateInput}/></label>
+                <label>Wunschort<input maxLength={120} onChange={(event) => setLocationInput(event.target.value)} placeholder="Zum Beispiel: Köln" value={locationInput}/></label>
+              </div>
+              {planError && <p className="sync-error" role="alert">{planError}</p>}
+              <button className="primary-button" disabled={planSaving} type="submit">{planSaving ? "Wird gespeichert …" : "Planungsdaten speichern"}</button>
+            </form>
             <div className="planning-grid">
               <form className="card task-form" onSubmit={submitTask}>
                 <div className="card-head">
@@ -915,28 +1005,21 @@ export default function Home() {
             title="Kalender"
             intro="Alle wichtigen Termine, Deadlines und Gespräche in einer gemeinsamen Zeitleiste."
           >
+            <div className="planning-grid">
+              <form className="card task-form" onSubmit={submitCustomerEvent}>
+                <div className="card-head"><div><small>{editingEventId ? "Termin bearbeiten" : "Neuer Termin"}</small><h2>{editingEventId ? "Details aktualisieren" : "Was steht an?"}</h2></div><span className="storage-badge">Synchronisiert</span></div>
+                <label>Titel<input maxLength={160} onChange={(event) => setEventTitle(event.target.value)} placeholder="Besichtigung, Gespräch, Probeessen …" required value={eventTitle}/></label>
+                <div className="amount-fields"><label>Beginn<input onChange={(event) => setEventStartsAt(event.target.value)} required type="datetime-local" value={eventStartsAt}/></label><label>Ende<input min={eventStartsAt || undefined} onChange={(event) => setEventEndsAt(event.target.value)} type="datetime-local" value={eventEndsAt}/></label></div>
+                <label>Ort<input maxLength={160} onChange={(event) => setEventLocation(event.target.value)} placeholder="Optional" value={eventLocation}/></label>
+                <label>Notiz<input maxLength={240} onChange={(event) => setEventNotes(event.target.value)} placeholder="Optional" value={eventNotes}/></label>
+                {eventError && <p className="sync-error" role="alert">{eventError}</p>}
+                <div className="form-actions"><button className="primary-button" disabled={eventSaving} type="submit">{eventSaving ? "Wird gespeichert …" : editingEventId ? "Änderungen speichern" : "Termin hinzufügen"}</button>{editingEventId && <button className="secondary-button" onClick={resetEventForm} type="button">Abbrechen</button>}</div>
+              </form>
               <div className="timeline card" aria-label="Eure nächsten Termine">
-              {[
-                ...(demoBooking ? [[new Date(`${demoBooking.startDate}T12:00:00`).toLocaleDateString("de-DE", { day: "2-digit", month: "short" }).toUpperCase(), "Demo-Buchung in Vorbereitung", `${demoBooking.items.length} Leistung${demoBooking.items.length === 1 ? "" : "en"} · keine Reservierung`]] : []),
-                [
-                  "18 SEP",
-                  "Gespräch mit Luma Fotografie",
-                  "11:00 · Video-Call",
-                ],
-                ["25 SEP", "Location-Begehung", "15:30 · Gut Sonnenhof"],
-                ["12 OKT", "Menüverkostung", "18:00 · Restaurant Lumière"],
-              ].map((item) => (
-                <div className="event" key={item[1]}>
-                    <b>
-                      <span>{item[0].split(" ")[0]}</span>
-                      <small>{item[0].split(" ")[1]}</small>
-                    </b>
-                    <span className="event-details">
-                    <strong>{item[1]}</strong>
-                    <small>{item[2]}</small>
-                  </span>
-                </div>
-              ))}
+                <div className="card-head"><div><small>{customerEvents.length} persönliche Termine</small><h2>Euer Kalender</h2></div></div>
+                {eventsLoading ? <p className="empty-state">Kalender wird geladen …</p> : customerEvents.length === 0 ? <p className="empty-state">Noch keine Termine. Tragt links eure erste Besichtigung oder Frist ein.</p> : customerEvents.map((item) => <div className="event" key={item.id}><b><span>{formatEventDay(item.startsAt)}</span><small>{formatEventMonth(item.startsAt)}</small></b><span className="event-details"><strong>{item.title}</strong><small>{formatEventDetails(item)}</small></span><div className="task-actions"><button disabled={eventSaving} onClick={() => editCustomerEvent(item)} type="button">Bearbeiten</button><button className="danger" disabled={eventSaving} onClick={() => void removeCustomerEvent(item.id)} type="button">Löschen</button></div></div>)}
+                {demoBooking && <div className="event demo-event"><b><span>{new Date(`${demoBooking.startDate}T12:00:00`).toLocaleDateString("de-DE", { day: "2-digit" })}</span><small>DEMO</small></b><span className="event-details"><strong>Demo-Buchung in Vorbereitung</strong><small>{demoBooking.items.length} Leistung{demoBooking.items.length === 1 ? "" : "en"} · keine Reservierung</small></span></div>}
+              </div>
             </div>
           </Page>
         )}
@@ -1157,17 +1240,7 @@ export default function Home() {
             intro="Handverlesene Profis, passend zu eurem Stil, Termin und Budget."
           >
             <div className="vendor-grid">
-              {favoritePackages.map((favorite) => <article className="card vendor-card" key={favorite.packageId}><span className="match">♥ Gemerkt</span><h2>{favorite.partnerName}</h2><p>{favorite.serviceType} · {favorite.city}<br/>{favorite.packageName}</p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: favorite.currency }).format(favorite.priceAmount)}</strong><button onClick={() => router.push("/discover")}>Angebot ansehen →</button></article>)}
-              {filteredVendors.map((vendor) => (
-                <article className="card vendor-card" key={vendor.name}>
-                  <div className="vendor-visual">{vendor.icon}</div>
-                  <span className="match">{vendor.match}% Match</span>
-                  <h2>{vendor.name}</h2>
-                  <p>{vendor.meta}</p>
-                  <strong>{vendor.price}</strong>
-                  <button>Details ansehen →</button>
-                </article>
-              ))}
+              {favoritePackages.length === 0 ? <article className="card empty-vendor-card"><span aria-hidden="true">♡</span><h2>Beginnt mit euren Favoriten</h2><p>Hier erscheinen ausschließlich Anbieter, die ihr selbst in der Ouivio-Suche gemerkt habt.</p><button className="primary-button" onClick={() => router.push("/discover")}>Anbieter entdecken →</button></article> : favoritePackages.map((favorite) => <article className="card vendor-card" key={favorite.packageId}><span className="match">♥ Gemerkt</span><h2>{favorite.partnerName}</h2><p>{favorite.serviceType} · {favorite.city}<br/>{favorite.packageName}</p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: favorite.currency }).format(favorite.priceAmount)}</strong><button onClick={() => router.push("/discover")}>Angebot ansehen →</button></article>)}
             </div>
           </Page>
         )}
@@ -1383,6 +1456,35 @@ function Page({
 function formatDueDate(value: string | null) {
   if (!value) return "";
   return `Fällig am ${new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(`${value}T12:00:00`))}`;
+}
+
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function localDateTimeToIso(value: string) {
+  return new Date(value).toISOString();
+}
+
+function isoToLocalDateTime(value: string) {
+  const date = new Date(value);
+  const pad = (number: number) => String(number).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function formatEventDay(value: string) {
+  return new Intl.DateTimeFormat("de-DE", { day: "2-digit" }).format(new Date(value));
+}
+
+function formatEventMonth(value: string) {
+  return new Intl.DateTimeFormat("de-DE", { month: "short" }).format(new Date(value)).toUpperCase();
+}
+
+function formatEventDetails(event: CustomerEvent) {
+  const time = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" }).format(new Date(event.startsAt));
+  return [time, event.location, event.notes].filter(Boolean).join(" · ");
 }
 
 function formatMoney(value: number) {
