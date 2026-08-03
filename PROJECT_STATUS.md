@@ -321,3 +321,11 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Trennung von persistentem Warenkorb und Merkliste erfolgreich. Die drei bestehenden Autoprefixer-Hinweise bleiben unverändert.
 - Die Anbieter-Kennzahl auf der Kundenübersicht zeigt ausschließlich den Warenkorb; die separate Merkliste bleibt als eigene Übersichtskarte darunter sichtbar.
 - Die öffentliche Suche erkennt eine bestehende Ouivio-Sitzung und zeigt oben rechts einen sichtbaren Konto-Einstieg. Er führt anhand des geschützten Kontoprofils Kunden in ihr Kunden-Dashboard und Partner in ihr Partner-Dashboard.
+- Favoriten und Warenkorb laden ihre sichtbaren Paket- und Anbieterdaten im Kunden-Dashboard jetzt über eine ausschließlich für das eigene Hochzeitskonto ausführbare Datenbankfunktion. Dadurch bleiben Partnerprofile weiterhin privat, während selbst gespeicherte Live-Angebote zuverlässig angezeigt werden.
+- Sämtliche Ouivio-Wortmarken in den interaktiven Bereichen verlinken explizit auf `/index.html#top`. Ein vorheriger Pilotpartner-Anker kann so beim Rückweg zur Startseite nicht mehr übernommen werden.
+
+## Letzter Arbeitsschritt
+
+- Migration `20260803113000_customer_saved_package_details.sql` im EU-Entwicklungsprojekt ausgeführt. Die Funktion prüft vor jeder Rückgabe die Mitgliedschaft der aktuell angemeldeten Person, ist für `anon` nicht ausführbar und gibt nur die eigenen Favoriten-/Warenkorb-Paketdetails zurück.
+- Ablauf mit dem bestehenden Kundenkonto transaktional geprüft: Das gespeicherte Paket „Demo · Hof Eichenhain“ wird je einmal als Favorit und als Warenkorbposition inklusive Ort, Paket und gewähltem Zeitraum zurückgegeben.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build erfolgreich; nur die drei bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen. Security Advisor geprüft: Der neue, absichtlich nur für `authenticated` ausführbare und intern mit Mitgliedschaftsschutz versehene RPC-Hinweis ist dokumentiert; keine anonymen Rechte wurden ergänzt.
