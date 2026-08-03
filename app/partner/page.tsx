@@ -170,7 +170,34 @@ export default function PartnerDashboard() {
   </main>;
 }
 
-function CalendarConnections() { const [notice,setNotice] = useState(""); const providers = [{name:"Google Calendar",mark:"G",detail:"Zwei-Wege-Synchronisation"},{name:"Outlook / Microsoft 365",mark:"M",detail:"Microsoft Graph Kalender"},{name:"Apple Calendar",mark:"A",detail:"iCalendar / CalDAV"}]; return <article className={styles.connections}><div><small>Schnittstellen</small><h2>Kalender verbinden</h2><p>Belegte Zeiten werden nach der Einrichtung automatisch zwischen Ouivio und euren Kalendern abgeglichen.</p></div>{providers.map((provider) => <button key={provider.name} onClick={() => setNotice(`${provider.name}: Die Oberfläche ist bereit. Für die Live-Verbindung werden im nächsten Schritt die Anbieter-Zugangsdaten eingerichtet.`)}><b>{provider.mark}</b><span><strong>{provider.name}</strong><small>{provider.detail}</small></span><i>Verbinden →</i></button>)}{notice && <p className={styles.notice}>{notice}</p>}<div className={styles.security}>🔒 Verbindungen werden serverseitig verschlüsselt gespeichert.</div></article>; }
+function CalendarConnections() {
+  const [notice, setNotice] = useState("");
+  const [appleOpen, setAppleOpen] = useState(false);
+  const [appleId, setAppleId] = useState("");
+  const [appPassword, setAppPassword] = useState("");
+  const [testing, setTesting] = useState(false);
+
+  const testAppleConnection = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!appleId.trim() || !appPassword.trim() || testing) return;
+    setTesting(true); setNotice("");
+    try {
+      const { data } = await getSupabaseClient().auth.getSession();
+      if (!data.session?.access_token) throw new Error("Bitte meldet euch zuerst erneut als Partner an.");
+      const response = await fetch("/api/calendar/apple/test", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({ appleId: appleId.trim(), appPassword }) });
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message || "Apple Calendar konnte nicht erreicht werden.");
+      setAppPassword(""); setAppleOpen(false);
+      setNotice("Apple-Zugang bestätigt. Das App-Passwort wurde nicht gespeichert. Als nächstes richten wir die verschlüsselte Dauer-Synchronisation ein.");
+    } catch (connectionError) { setNotice(connectionError instanceof Error ? connectionError.message : "Apple Calendar konnte nicht erreicht werden."); } finally { setTesting(false); }
+  };
+  const providers = [{ name: "Google Calendar", mark: "G", detail: "Zwei-Wege-Synchronisation" }, { name: "Outlook / Microsoft 365", mark: "M", detail: "Microsoft Graph Kalender" }];
+  return <article className={styles.connections}><div><small>Schnittstellen</small><h2>Kalender verbinden</h2><p>Prüft einen Zugang zunächst sicher. Erst nach der Freigabe werden belegte Zeiten automatisch abgeglichen.</p></div>
+    <button type="button" className={styles.appleConnection} onClick={() => setAppleOpen((current) => !current)} aria-expanded={appleOpen}><b>A</b><span><strong>Apple Calendar</strong><small>iCloud Calendar · CalDAV</small></span><i>{appleOpen ? "Schließen" : "Zugang prüfen →"}</i></button>
+    {appleOpen && <form className={styles.appleForm} onSubmit={testAppleConnection}><strong>Apple Calendar sicher prüfen</strong><p>Verwendet eure Apple-ID und das eigens dafür erzeugte App-spezifische Passwort. Das Passwort dient nur diesem Verbindungstest und wird weder im Browser noch in Ouivio gespeichert.</p><label>Apple-ID<input autoComplete="username" type="email" value={appleId} onChange={(event) => setAppleId(event.target.value)} placeholder="name@icloud.com" required /></label><label>App-spezifisches Passwort<input autoComplete="off" type="password" value={appPassword} onChange={(event) => setAppPassword(event.target.value)} placeholder="xxxx-xxxx-xxxx-xxxx" required /></label><button disabled={testing}>{testing ? "Apple-Zugang wird geprüft …" : "Apple-Zugang sicher prüfen"}</button></form>}
+    {providers.map((provider) => <button type="button" key={provider.name} onClick={() => setNotice(`${provider.name}: Die Verbindung wird nach Apple Calendar ergänzt.`)}><b>{provider.mark}</b><span><strong>{provider.name}</strong><small>{provider.detail}</small></span><i>Demnächst</i></button>)}
+    {notice && <p className={styles.notice} role="status">{notice}</p>}<div className={styles.security}>🔒 Der Test überträgt Zugangsdaten ausschließlich verschlüsselt zum Server und verwirft das Passwort danach sofort.</div></article>;
+}
 type DemoChatMessage = { id: string; from: "customer" | "partner"; text: string; time: string };
 type DemoConversation = { id: string; couple: string; booking: string; date: string; preview: string; unread: boolean; messages: DemoChatMessage[] };
 
