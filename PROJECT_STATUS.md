@@ -98,6 +98,9 @@ Technische Grundlage:
 - Der Checkout enthält vorbereitete, klar noch nicht aktivierte Zahlungsarten für Karte/Digital Wallet, PayPal und SEPA-Überweisung. Sie fragen keine Zahlungsdaten ab, führen keine Transaktion aus und dienen bis zur bewussten Stripe-/Zahlungsanbieter-Anbindung ausschließlich als Produktvorschau.
 - Die Anmeldung prüft beim Öffnen und bei einer wiederhergestellten Supabase-Sitzung automatisch das bestehende Konto und leitet Kunden direkt in ihre Planung beziehungsweise Partner in ihren Partnerbereich. Ist keine Sitzung vorhanden, ist der sichtbare Wechsel von der Registrierung zur Anmeldung eindeutig hervorgehoben; eine bloß im Browser vorausgefüllte E-Mail-Adresse wird aus Sicherheitsgründen nicht als Anmeldung behandelt.
 - Angemeldete Kunden können veröffentlichte Live-Pakete aus der Suche in einer persönlichen Merkliste speichern oder daraus entfernen. Die Merkliste ist im Anbieterbereich des Kunden-Dashboards sichtbar und wird über eigene, mit der Hochzeitsmitgliedschaft geschützte Datenbankzeilen geräteübergreifend gespeichert. Statische Demo-Karten bleiben ausdrücklich nicht speicherbar.
+- Der Kundenbereich trennt nun konsequent persönliche Daten von Beispieldaten: Paarname, Hochzeitstermin und Wunschort werden in der bestehenden persönlichen Hochzeit gespeichert und steuern Titel, Countdown und Orientierung im Dashboard.
+- Kunden können eigene Kalendereinträge mit Beginn, optionalem Ende, Ort und Notiz anlegen, bearbeiten und löschen. Die Einträge liegen in der bereits vorhandenen, mit Hochzeitsmitgliedschaft geschützten `events`-Tabelle.
+- Das Kunden-Dashboard zeigt keine erfundenen Matches, Anbieter oder Kalendereinträge mehr. Die Anbieteransicht enthält ausschließlich selbst gemerkte Live-Angebote; ohne eigene Daten führt ein klarer Leerzustand zur Suche. Eine bewusst gestartete lokale Checkout-Demo bleibt separat als Demo markiert.
 - Die Datenbankgrundlage enthält pro Paket einen `service_type`-Wert mit zulässigen Bereichen Location, Catering oder Fotografie; der bestehende Ressourcen-, RLS- und Doppelbuchungsschutz bleibt unverändert.
 - Die Verfügbarkeitsprüfung berücksichtigt Ressourcen, Pufferzeiten, bestehende Kalendertermine und aktive Buchungen. Eine PostgreSQL-Ausschlussregel sowie transaktionale Ressourcensperren verhindern konkurrierende Doppelbuchungen auf Datenbankebene.
 
@@ -122,7 +125,7 @@ Technische Grundlage:
 
 ## Bekannte Einschränkungen
 
-- Das Dashboard verwendet überwiegend fest codierte Demo-Daten.
+- Einige Bereiche wie Budget, Aufgaben und Gäste besitzen noch keine geführte Komplett-Einrichtung, sind aber benutzerspezifisch gespeichert. Kundenübersicht, Anbieterbereich und Kalender verwenden keine festen Beispieldaten mehr.
 - Das Supabase-Datenbankschema ist im Projekt `Ouivio` aktiv, die öffentlichen Anwendungsvariablen sind lokal und für den Feature-Branch in Vercel Preview verbunden.
 - Authentifizierung und clientseitiger Routenschutz sind umgesetzt; ein vollständiger Registrierungstest mit echter E-Mail-Bestätigung erfordert noch ein Benutzerkonto.
 - Frühere Browser-Demoaufgaben aus `ouivio.tasks.v2` werden bewusst nicht automatisch in einen echten Benutzerbereich übernommen.
@@ -198,6 +201,7 @@ Priorität 3 – Qualität und Betrieb:
 - Anbieter entscheiden je Leistungsbereich autonom zwischen Einzelbuchung, Add-on, Bundle und Komplettpaket sowie über die Zulässigkeit externer Ergänzungen. So können Kunden einzelne Leistungen kombinieren, während Anbieter ihre Angebotsgrenzen verbindlich festlegen.
 - Buchbare Pakete werden unabhängig von der ursprünglichen Hauptkategorie eines Partnerkontos pro Leistungsbereich geführt. Dadurch kann ein Mehrbereichsanbieter ein Location-Paket und ergänzende Catering- oder Fotografie-Pakete getrennt veröffentlichen und verwalten.
 - Öffentliche Suche und Zusammenstellung bleiben ohne Konto möglich, damit Paare den Marketplace ohne Hürde erkunden können. Persönliche, geräteübergreifende Funktionen (Merkliste und persistenter Warenkorb) bleiben hinter der Anmeldung; die unverbindliche Vorauswahl wird nicht als Buchung oder Reservierung behandelt.
+- Der Kundenbereich setzt auf „eigene Daten zuerst“: Platzhalter dienen ausschließlich eindeutig gekennzeichneten Demos. Nach einer Eingabe werden keine fiktiven Matches oder Kalendertermine mit der persönlichen Planung vermischt.
 - Die Kundenregistrierung wird nur auf localhost und dem festen `feat/ouivio-core-foundation`-Preview angezeigt. Die produktive Oberfläche bleibt im Pre-Launch-Zustand ohne Registrierungsoption; das bestehende Supabase-Projekt und dessen globale Auth-Einstellungen werden dafür nicht verändert.
 - Neue Partnerzugänge bleiben während der limitierten Pilotphase gesperrt. Interessierte Anbieter nutzen das bestehende Pilotpartner-Formular auf der Startseite; Accounts werden erst nach manueller Prüfung angelegt oder freigeschaltet.
 - Die zentrale Zugangsauswahl unter `/access` ist der Standard-Einstieg für nicht angemeldete Nutzer. Direkte Aufrufe des Kunden-Dashboards führen dorthin; direkte Partneraufrufe und öffentliche Anbieterlinks führen in den Pilotphasenbereich. Nach einer bestehenden Anmeldung entscheidet das geschützte Kontoprofil weiterhin serverseitig, welcher Bereich geöffnet wird.
@@ -212,6 +216,7 @@ Priorität 3 – Qualität und Betrieb:
 
 ## Letzte Prüfung
 
+- Kundenfluss weiterentwickelt: persönliches Hochzeitsprofil (Paarname, Termin, Ort) und echter Kundenkalender auf Basis der bestehenden RLS-geschützten Tabellen ergänzt. Feste Dashboard-Matches und Kalendereinträge durch persönliche Daten beziehungsweise klare Leerezustände ersetzt. TypeScript-Prüfung und optimierter Next.js-Production-Build erfolgreich; nur die drei bekannten Autoprefixer-Hinweise bestehender CSS-Dateien bleiben bestehen.
 - Checkout um eine sichtbare, nicht aktive Zahlungsarten-Vorschau für Karte/Digital Wallet, PayPal und SEPA ergänzt. Die bestehende Testzahlung bleibt klar als Simulation gekennzeichnet; externe Zahlungsanbieter werden nicht angesprochen.
 - Anmeldeseite robuster gemacht: vorhandene Sitzungen werden vor dem Registrierungsformular geprüft und auch bei einer wiederhergestellten Auth-Sitzung in den passenden Bereich geleitet. Der Zugang für bereits registrierte Kunden ist im Registrierungsmodus als eigene, auffällige Aktion erreichbar. Die geschützte Startseite blieb unverändert.
 - Paketbezogene Merkliste ergänzt: Live-Angebote lassen sich nach der Anmeldung sicher für die eigene Hochzeit speichern, im Kunden-Dashboard einsehen und wieder entfernen. Die neue Tabelle verwendet RLS mit der bestehenden Hochzeitsmitgliedschaft; anonyme Rollen erhalten keine Rechte.
