@@ -149,6 +149,10 @@ export default function Home() {
   const weddingCountdown = weddingPlan?.weddingDate
     ? Math.max(0, Math.ceil((new Date(`${weddingPlan.weddingDate}T12:00:00`).getTime() - startOfToday().getTime()) / 86_400_000))
     : null;
+  const discoverHref = `/discover?${new URLSearchParams({
+    ...(weddingPlan?.weddingDate ? { start: weddingPlan.weddingDate, end: weddingPlan.weddingDate } : {}),
+    ...(weddingPlan?.location ? { city: weddingPlan.location } : {}),
+  }).toString()}`;
 
   const toggleTask = async (id: string) => {
     const currentTask = tasks.find((task) => task.id === id);
@@ -721,7 +725,7 @@ export default function Home() {
             <small>Wedding workspace</small>
             <strong>{active}</strong>
           </div>
-          <Link className="discover-button" href="/discover">
+          <Link className="discover-button" href={discoverHref}>
             Anbieter entdecken →
           </Link>
           <button className="logout-button" onClick={signOut} type="button">
@@ -840,7 +844,7 @@ export default function Home() {
               <article className="card">
                 <div className="card-head">
                   <div><small>Ouivio Auswahl</small><h2>Merkliste</h2></div>
-                  <button onClick={() => router.push("/discover")}>Anbieter entdecken →</button>
+                  <button onClick={() => router.push(discoverHref)}>Anbieter entdecken →</button>
                 </div>
                 {favoritePackages.length === 0 ? <p className="empty-state">Noch keine Angebote gemerkt. Entdeckt passende Anbieter über die Suche.</p> : favoritePackages.slice(0, 2).map((favorite) => <div className="row vendor" key={favorite.packageId}><span className="vendor-icon">♥</span><span><strong>{favorite.partnerName}</strong><small>{favorite.serviceType} · {favorite.city}</small></span><b>Gemerkt</b></div>)}
               </article>
@@ -1240,7 +1244,7 @@ export default function Home() {
             intro="Handverlesene Profis, passend zu eurem Stil, Termin und Budget."
           >
             <div className="vendor-grid">
-              {favoritePackages.length === 0 ? <article className="card empty-vendor-card"><span aria-hidden="true">♡</span><h2>Beginnt mit euren Favoriten</h2><p>Hier erscheinen ausschließlich Anbieter, die ihr selbst in der Ouivio-Suche gemerkt habt.</p><button className="primary-button" onClick={() => router.push("/discover")}>Anbieter entdecken →</button></article> : favoritePackages.map((favorite) => <article className="card vendor-card" key={favorite.packageId}><span className="match">♥ Gemerkt</span><h2>{favorite.partnerName}</h2><p>{favorite.serviceType} · {favorite.city}<br/>{favorite.packageName}</p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: favorite.currency }).format(favorite.priceAmount)}</strong><button onClick={() => router.push("/discover")}>Angebot ansehen →</button></article>)}
+              {favoritePackages.length === 0 ? <article className="card empty-vendor-card"><span aria-hidden="true">♡</span><h2>Beginnt mit euren Favoriten</h2><p>Hier erscheinen ausschließlich Anbieter, die ihr selbst in der Ouivio-Suche gemerkt habt.</p><button className="primary-button" onClick={() => router.push(discoverHref)}>Anbieter entdecken →</button></article> : favoritePackages.map((favorite) => <article className="card vendor-card" key={favorite.packageId}><span className="match">♥ Gemerkt</span><h2>{favorite.partnerName}</h2><p>{favorite.serviceType} · {favorite.city}<br/>{favorite.packageName}</p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: favorite.currency }).format(favorite.priceAmount)}</strong><button onClick={() => router.push(discoverHref)}>Angebot ansehen →</button></article>)}
             </div>
           </Page>
         )}
