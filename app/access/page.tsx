@@ -10,5 +10,6 @@ export default function AccessPage() {
       <Link className={`${styles.choice} ${styles.partner}`} href="/index.html#partner"><span className={styles.icon}>✦</span><small>Für Unternehmen</small><h2>Leistungen anbieten</h2><p>Erfahrt mehr über die limitierte Pilotphase und bewerbt euch als einer der ersten Anbieter.</p><b>Zur Pilotphase <i>→</i></b></Link>
     </section>
     <p className={styles.note}>Ihr habt bereits ein Konto? Meldet euch einfach mit eurer E-Mail-Adresse an. Ouivio öffnet euren Kunden- oder Partnerbereich automatisch.</p>
+    <Link className={styles.demoLink} href="/partner?demo=1"><span aria-hidden="true">◉</span><span><small>Entwicklungsansicht</small><strong>Anbieter-Demo ohne Anmeldung öffnen →</strong></span></Link>
   </main>;
 }
