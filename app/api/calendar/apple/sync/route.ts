@@ -8,7 +8,7 @@ const appleRoot = "https://caldav.icloud.com/";
 const davContentType = "application/xml; charset=utf-8";
 
 type Credentials = { appleId: string; appPassword: string };
-type ImportedEvent = { external_event_id: string; starts_at: string; ends_at: string };
+type ImportedEvent = { external_event_id: string; starts_at: string; ends_at: string; title: string };
 
 export async function POST(request: NextRequest) {
   const accessToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
         events.slice(0, 500).map((event) => ({
           ...event,
           partner_id: partner.id,
-          title: "Belegt · Apple Calendar",
           event_type: "blocked",
           status: "confirmed",
           source: "apple",
@@ -151,10 +150,19 @@ function parseIcsEvents(xml: string): ImportedEvent[] {
     const end = field(match[1], "DTEND");
     const startsAt = start ? parseIcsDate(start) : null;
     const endsAt = end ? parseIcsDate(end) : null;
-    return uid && startsAt && endsAt ? [{ external_event_id: uid, starts_at: startsAt, ends_at: endsAt }] : [];
+    const summary = field(match[1], "SUMMARY");
+    return uid && startsAt && endsAt ? [{
+      external_event_id: uid,
+      starts_at: startsAt,
+      ends_at: endsAt,
+      // Titles stay in the owner's RLS-protected partner calendar and are
+      // never part of the public availability catalog.
+      title: summary ? decodeIcsText(summary).slice(0, 160) : "Belegt · Apple Calendar",
+    }] : [];
   }));
 }
 function field(event: string, name: string) { return event.match(new RegExp(`(?:^|\\n)${name}(?:;[^:]*)?:(.+)`))?.[1]?.trim(); }
+function decodeIcsText(value: string) { return value.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1"); }
 function parseIcsDate(value: string) {
   if (/^\d{8}$/.test(value)) return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T00:00:00Z`;
   const compact = value.replace(/Z$/, "");
