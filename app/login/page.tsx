@@ -129,7 +129,7 @@ export default function LoginPage() {
   return (
     <main className={styles.shell}>
       <section className={styles.panel} aria-labelledby="login-title">
-        <Link className={styles.logo} href="/">Ouivio<span>.</span></Link>
+        <Link className={styles.logo} href="/index.html#top">Ouivio<span>.</span></Link>
         <p className={styles.eyebrow}>{mode === "signup" ? accountType === "partner" ? "Partnerkonto anlegen" : "Kundenkonto anlegen" : "Geschützter Entwicklungszugang"}</p>
         <h1 id="login-title">{mode === "signup" ? accountType === "partner" ? "Euer Angebot beginnt hier." : "Eure Planung beginnt hier." : "Willkommen zurück."}</h1>
         <p className={styles.intro}>{mode === "signup" ? accountType === "partner" ? "Erstellt euer Partnerkonto. Danach richtet ihr Unternehmen, Leistungen, Pakete und Verfügbarkeit ein." : "Erstellt euer Kundenkonto, um eure Auswahl zu speichern und Verfügbarkeiten verbindlich zu prüfen." : "Meldet euch an, um eure persönliche Hochzeitsplanung fortzusetzen."}</p>
@@ -150,7 +150,7 @@ export default function LoginPage() {
         </>}
         {partnerDemoAvailable && <Link className={styles.back} href="/partner?demo=1">Partner-Demo ohne Anmeldung öffnen →</Link>}
         <Link className={styles.back} href="/access">← Kontoart auswählen</Link>
-        <Link className={styles.back} href="/">← Zurück zur Startseite</Link>
+        <Link className={styles.back} href="/index.html#top">← Zurück zur Startseite</Link>
       </section>
       <aside className={styles.promise} aria-label="Ouivio Vorteile">
         <p>Ouivio entsteht.</p>
