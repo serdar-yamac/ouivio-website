@@ -134,7 +134,7 @@ export default function PartnerDashboard() {
 
   return <main className={styles.shell}>
     <aside className={styles.sidebar}>
-      <Link href="/" className={styles.logo}>Ouivio<span>.</span></Link>
+      <Link href="/index.html#top" className={styles.logo}>Ouivio<span>.</span></Link>
       <span className={styles.partnerBadge}>Partner</span>
       <nav>{nav.map((item) => <button className={view === item ? styles.active : ""} key={item} onClick={() => setView(item)}><i>{icon(item)}</i><span>{item}</span></button>)}</nav>
       <div className={styles.account}><b>{businessName.slice(0, 2).toUpperCase()}</b><span><strong>{businessName}</strong><small>Partnerkonto</small></span></div>
