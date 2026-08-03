@@ -798,11 +798,11 @@ export default function Home() {
                 className="card stat"
                 onClick={() => setActive("Anbieter")}
               >
-                <span>Anbieter</span>
-                <strong>{cartPackages.length + favoritePackages.length}</strong>
-                <small>{cartPackages.length ? `${cartPackages.length} im Warenkorb · ${favoritePackages.length} gemerkt` : favoritePackages.length === 1 ? "Angebot gemerkt" : "Angebote gemerkt"}</small>
+                <span>Warenkorb</span>
+                <strong>{cartPackages.length}</strong>
+                <small>{cartPackages.length === 1 ? "Leistung ausgewählt" : "Leistungen ausgewählt"}</small>
                 <div className="faces">
-                  <i>♥</i>
+                  <i>✓</i>
                   <i>⌕</i>
                 </div>
               </button>
