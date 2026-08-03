@@ -32,6 +32,7 @@ import { ensureWeddingWorkspace } from "../../lib/workspace";
 import { ensureAccountProfile } from "../../lib/account";
 import { readDemoBooking, type DemoBooking } from "../../lib/demo-booking";
 import { fetchFavoritePackages, type FavoritePackage } from "../../lib/favorite-packages";
+import { fetchCartPackages, type CartPackage } from "../../lib/cart-items";
 import {
   createCustomerEvent,
   deleteCustomerEvent,
@@ -109,6 +110,7 @@ export default function Home() {
   const [copiedGuestId, setCopiedGuestId] = useState<string | null>(null);
   const [demoBooking, setDemoBooking] = useState<DemoBooking | null>(null);
   const [favoritePackages, setFavoritePackages] = useState<FavoritePackage[]>([]);
+  const [cartPackages, setCartPackages] = useState<CartPackage[]>([]);
   const [weddingPlan, setWeddingPlan] = useState<WeddingPlan | null>(null);
   const [partnerNamesInput, setPartnerNamesInput] = useState("");
   const [weddingDateInput, setWeddingDateInput] = useState("");
@@ -577,11 +579,12 @@ export default function Home() {
           return;
         }
         const workspaceId = await ensureWeddingWorkspace(data.user);
-        const [cloudTasks, cloudBudget, cloudGuests, cloudFavorites, cloudPlan, cloudEvents] = await Promise.all([
+        const [cloudTasks, cloudBudget, cloudGuests, cloudFavorites, cloudCart, cloudPlan, cloudEvents] = await Promise.all([
           fetchTasks(workspaceId),
           fetchBudget(workspaceId),
           fetchGuests(workspaceId),
           fetchFavoritePackages(workspaceId),
+          fetchCartPackages(workspaceId),
           fetchWeddingPlan(workspaceId),
           fetchCustomerEvents(workspaceId),
         ]);
@@ -595,6 +598,7 @@ export default function Home() {
         setBudgetLoading(false);
         setGuests(cloudGuests);
         setFavoritePackages(cloudFavorites);
+        setCartPackages(cloudCart);
         setWeddingPlan(cloudPlan);
         setPartnerNamesInput(cloudPlan.partnerNames);
         setWeddingDateInput(cloudPlan.weddingDate ?? "");
@@ -795,8 +799,8 @@ export default function Home() {
                 onClick={() => setActive("Anbieter")}
               >
                 <span>Anbieter</span>
-                <strong>{favoritePackages.length}</strong>
-                <small>{favoritePackages.length === 1 ? "Angebot gemerkt" : "Angebote gemerkt"}</small>
+                <strong>{cartPackages.length + favoritePackages.length}</strong>
+                <small>{cartPackages.length ? `${cartPackages.length} im Warenkorb · ${favoritePackages.length} gemerkt` : favoritePackages.length === 1 ? "Angebot gemerkt" : "Angebote gemerkt"}</small>
                 <div className="faces">
                   <i>♥</i>
                   <i>⌕</i>
@@ -843,10 +847,10 @@ export default function Home() {
               </article>
               <article className="card">
                 <div className="card-head">
-                  <div><small>Ouivio Auswahl</small><h2>Merkliste</h2></div>
+                  <div><small>Ouivio Auswahl</small><h2>{cartPackages.length ? "Warenkorb" : "Merkliste"}</h2></div>
                   <button onClick={() => router.push(discoverHref)}>Anbieter entdecken →</button>
                 </div>
-                {favoritePackages.length === 0 ? <p className="empty-state">Noch keine Angebote gemerkt. Entdeckt passende Anbieter über die Suche.</p> : favoritePackages.slice(0, 2).map((favorite) => <div className="row vendor" key={favorite.packageId}><span className="vendor-icon">♥</span><span><strong>{favorite.partnerName}</strong><small>{favorite.serviceType} · {favorite.city}</small></span><b>Gemerkt</b></div>)}
+                {cartPackages.length ? cartPackages.slice(0, 2).map((item) => <div className="row vendor" key={item.packageId}><span className="vendor-icon">✓</span><span><strong>{item.partnerName}</strong><small>{item.serviceType} · im Warenkorb</small></span><b>Ausgewählt</b></div>) : favoritePackages.length === 0 ? <p className="empty-state">Noch keine Angebote gemerkt. Entdeckt passende Anbieter über die Suche.</p> : favoritePackages.slice(0, 2).map((favorite) => <div className="row vendor" key={favorite.packageId}><span className="vendor-icon">♥</span><span><strong>{favorite.partnerName}</strong><small>{favorite.serviceType} · {favorite.city}</small></span><b>Gemerkt</b></div>)}
               </article>
             </section>
           </>
@@ -1243,9 +1247,18 @@ export default function Home() {
             title="Anbieter"
             intro="Handverlesene Profis, passend zu eurem Stil, Termin und Budget."
           >
+            <section style={{ marginBottom: 28 }}>
+              <div className="card-head"><div><small>Bereit für den nächsten Schritt</small><h2>Eure Auswahl · Warenkorb</h2><p>Konkrete Pakete für euren Wunschtermin. Noch keine Reservierung und keine Zahlung.</p></div><button onClick={() => router.push(discoverHref)}>Auswahl ergänzen →</button></div>
+              <div className="vendor-grid">
+                {cartPackages.length === 0 ? <article className="card empty-vendor-card"><span aria-hidden="true">✓</span><h2>Noch nichts im Warenkorb</h2><p>Fügt ein passendes Live-Angebot aus der Suche hinzu, wenn ihr es für euren Termin weiterverfolgen möchtet.</p><button className="primary-button" onClick={() => router.push(discoverHref)}>Anbieter entdecken →</button></article> : cartPackages.map((item) => <article className="card vendor-card" key={item.packageId}><span className="match">✓ Im Warenkorb</span><h2>{item.partnerName}</h2><p>{item.serviceType} · {item.city}<br/>{item.packageName}<br/><small>{new Date(`${item.startsOn}T12:00:00`).toLocaleDateString("de-DE")}–{new Date(`${item.endsOn}T12:00:00`).toLocaleDateString("de-DE")}</small></p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: item.currency }).format(item.priceAmount)}</strong><button onClick={() => router.push(discoverHref)}>Auswahl bearbeiten →</button></article>)}
+              </div>
+            </section>
+            <section>
+              <div className="card-head"><div><small>Unverbindlich vorgemerkt</small><h2>Favoriten</h2><p>Interessante Angebote zum Vergleichen – unabhängig von eurem Warenkorb.</p></div></div>
             <div className="vendor-grid">
               {favoritePackages.length === 0 ? <article className="card empty-vendor-card"><span aria-hidden="true">♡</span><h2>Beginnt mit euren Favoriten</h2><p>Hier erscheinen ausschließlich Anbieter, die ihr selbst in der Ouivio-Suche gemerkt habt.</p><button className="primary-button" onClick={() => router.push(discoverHref)}>Anbieter entdecken →</button></article> : favoritePackages.map((favorite) => <article className="card vendor-card" key={favorite.packageId}><span className="match">♥ Gemerkt</span><h2>{favorite.partnerName}</h2><p>{favorite.serviceType} · {favorite.city}<br/>{favorite.packageName}</p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: favorite.currency }).format(favorite.priceAmount)}</strong><button onClick={() => router.push(discoverHref)}>Angebot ansehen →</button></article>)}
             </div>
+            </section>
           </Page>
         )}
         {active === "Gäste" && (
