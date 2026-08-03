@@ -24,17 +24,24 @@ export default function LoginPage() {
   const [partnerCity, setPartnerCity] = useState("");
   const [partnerCategory, setPartnerCategory] = useState<"location" | "photography" | "catering">("location");
   const [accountType, setAccountType] = useState<"customer" | "partner">("customer");
+  const [activeAccountEmail, setActiveAccountEmail] = useState("");
   const [success, setSuccess] = useState("");
   const [checkingSession, setCheckingSession] = useState(true);
   const isRouting = useRef(false);
 
-  const routeAuthenticatedUser = useCallback(async (user: import("@supabase/supabase-js").User) => {
+  const routeAuthenticatedUser = useCallback(async (user: import("@supabase/supabase-js").User, partnerRegistrationRequested = false) => {
     if (isRouting.current) return;
     isRouting.current = true;
     setCheckingSession(true);
 
     try {
       const profile = await ensureAccountProfile(user);
+      if (partnerRegistrationRequested && profile.type !== "partner") {
+        setActiveAccountEmail(user.email || "einem Kundenkonto");
+        isRouting.current = false;
+        setCheckingSession(false);
+        return;
+      }
       if (profile.type === "partner") {
         const metadata = user.user_metadata;
         const partnerCategory = metadata.category === "location" || metadata.category === "photography" || metadata.category === "catering" ? metadata.category : undefined;
@@ -77,7 +84,7 @@ export default function LoginPage() {
       if (!active) return;
       if (sessionError) setError(authErrorMessage(sessionError));
       if (data.user) {
-        await routeAuthenticatedUser(data.user);
+        await routeAuthenticatedUser(data.user, intent === "partner");
         return;
       }
       setCheckingSession(false);
@@ -85,7 +92,7 @@ export default function LoginPage() {
 
     void restoreSession();
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) void routeAuthenticatedUser(session.user);
+      if (session?.user) void routeAuthenticatedUser(session.user, intent === "partner");
     });
 
     return () => {
@@ -134,6 +141,22 @@ export default function LoginPage() {
     }
   };
 
+  const signOutForPartnerRegistration = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const { error: signOutError } = await getSupabaseClient().auth.signOut({ scope: "local" });
+      if (signOutError) throw signOutError;
+      isRouting.current = false;
+      setActiveAccountEmail("");
+      setMode("signup");
+    } catch (caught) {
+      setError(authErrorMessage(caught));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <main className={styles.shell}>
       <section className={styles.panel} aria-labelledby="login-title">
@@ -142,7 +165,11 @@ export default function LoginPage() {
         <h1 id="login-title">{mode === "signup" ? accountType === "partner" ? "Euer Angebot beginnt hier." : "Eure Planung beginnt hier." : "Willkommen zurück."}</h1>
         <p className={styles.intro}>{mode === "signup" ? accountType === "partner" ? "Erstellt euer Partnerkonto. Danach richtet ihr Unternehmen, Leistungen, Pakete und Verfügbarkeit ein." : "Erstellt euer Kundenkonto, um eure Auswahl zu speichern und Verfügbarkeiten verbindlich zu prüfen." : "Meldet euch an, um eure persönliche Hochzeitsplanung fortzusetzen."}</p>
 
-        {checkingSession ? <div className={styles.sessionCheck} role="status"><strong>Angemeldetes Konto wird geprüft …</strong><span>Wenn ihr bereits angemeldet seid, öffnen wir eure Planung automatisch.</span></div> : <>
+        {checkingSession ? <div className={styles.sessionCheck} role="status"><strong>Angemeldetes Konto wird geprüft …</strong><span>Wenn ihr bereits angemeldet seid, öffnen wir eure Planung automatisch.</span></div> : activeAccountEmail ? <>
+          <div className={styles.prelaunch} role="status"><strong>Ihr seid bereits als Kunde angemeldet</strong><span>{activeAccountEmail} ist ein Kundenkonto. Für den Partner-Test benötigt ihr ein separates Konto mit eigener E-Mail-Adresse.</span></div>
+          <button className={styles.existingAccount} disabled={busy} onClick={() => void signOutForPartnerRegistration()} type="button"><span>Kundenkonto auf diesem Gerät abmelden</span><strong>{busy ? "Einen Moment …" : "Partnerkonto anlegen →"}</strong></button>
+          {error && <p className={styles.error} role="alert">{error}</p>}
+        </> : <>
           {registrationAvailable ? <div className={styles.previewNotice} role="status"><strong>Entwicklungs-Preview</strong><span>{accountType === "partner" ? "Die Partnerregistrierung ist für den gemeinsamen Marketplace-Test geöffnet. Vor dem Launch wird sie wieder über die Pilotphase gesteuert." : "Die Kundenregistrierung ist hier zum Testen geöffnet. Partner werden während der limitierten Pilotphase persönlich freigeschaltet."}</span></div> : <div className={styles.prelaunch} role="status"><strong>Registrierung noch nicht geöffnet</strong><span>Neue Kundenkonten werden erst zum offiziellen Start freigeschaltet.</span></div>}
 
           {registrationAvailable && mode === "signup" && <button className={styles.existingAccount} onClick={() => { setMode("signin"); setError(""); setSuccess(""); }} type="button"><span>Bereits registriert?</span><strong>Jetzt sicher anmelden →</strong></button>}
