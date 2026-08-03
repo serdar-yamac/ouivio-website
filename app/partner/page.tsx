@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ensureAccountProfile, ensurePartnerProfile } from "../../lib/account";
 import { createPartnerEvent, deletePartnerEvent, fetchPartnerEvents, updatePartnerEvent, type PartnerCalendarEvent, type PartnerEventType } from "../../lib/partner-calendar";
 import { createPartnerDemoEvents, getCustomerDemoBookingEvent, isPartnerDemoAllowed } from "../../lib/partner-demo";
@@ -180,6 +180,7 @@ function CalendarConnections({ onSynced }: { onSynced: () => Promise<void> }) {
   const [showApplePassword, setShowApplePassword] = useState(false);
   const [appleConnected, setAppleConnected] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const lastAutomaticSync = useRef(0);
 
   useEffect(() => {
     let active = true;
@@ -207,9 +208,9 @@ function CalendarConnections({ onSynced }: { onSynced: () => Promise<void> }) {
       setNotice("Apple Calendar ist verbunden. Klickt jetzt auf „Jetzt synchronisieren“, um eure belegten Zeiten in Ouivio zu übernehmen.");
     } catch (connectionError) { setAppleError(connectionError instanceof Error ? connectionError.message : "Apple Calendar konnte nicht erreicht werden."); } finally { setTesting(false); }
   };
-  const syncAppleCalendar = async () => {
+  const syncAppleCalendar = async (quiet = false) => {
     if (syncing) return;
-    setSyncing(true); setNotice(""); setAppleError("");
+    setSyncing(true); if (!quiet) setNotice(""); setAppleError("");
     try {
       const { data } = await getSupabaseClient().auth.getSession();
       if (!data.session?.access_token) throw new Error("Bitte meldet euch zuerst erneut als Partner an.");
@@ -217,13 +218,25 @@ function CalendarConnections({ onSynced }: { onSynced: () => Promise<void> }) {
       const result = await response.json() as { imported?: number; message?: string };
       if (!response.ok) throw new Error(result.message || "Apple Calendar konnte nicht synchronisiert werden.");
       await onSynced();
-      setNotice(`${result.imported || 0} belegte Zeit${result.imported === 1 ? "" : "en"} aus Apple Calendar synchronisiert. Ouivio hat nichts in Apple geändert.`);
+      if (!quiet) setNotice(`${result.imported || 0} belegte Zeit${result.imported === 1 ? "" : "en"} aus Apple Calendar synchronisiert. Ouivio hat nichts in Apple geändert.`);
     } catch (syncError) { setAppleError(syncError instanceof Error ? syncError.message : "Apple Calendar konnte nicht synchronisiert werden."); } finally { setSyncing(false); }
   };
+  useEffect(() => {
+    if (!appleConnected) return;
+    const synchronizeWhenVisible = () => {
+      if (document.visibilityState !== "visible" || Date.now() - lastAutomaticSync.current < 60_000) return;
+      lastAutomaticSync.current = Date.now();
+      void syncAppleCalendar(true);
+    };
+    synchronizeWhenVisible();
+    document.addEventListener("visibilitychange", synchronizeWhenVisible);
+    const interval = window.setInterval(synchronizeWhenVisible, 5 * 60_000);
+    return () => { document.removeEventListener("visibilitychange", synchronizeWhenVisible); window.clearInterval(interval); };
+  }, [appleConnected]);
   const providers = [{ name: "Google Calendar", mark: "G", detail: "Zwei-Wege-Synchronisation" }, { name: "Outlook / Microsoft 365", mark: "M", detail: "Microsoft Graph Kalender" }];
   return <article className={styles.connections}><div><small>Schnittstellen</small><h2>Kalender verbinden</h2><p>Importiert auf Wunsch belegte Zeiten aus einem verbundenen Kalender. Ouivio schreibt niemals Termine zurück.</p></div>
     <button type="button" className={styles.appleConnection} onClick={() => setAppleOpen((current) => !current)} aria-expanded={appleOpen}><b>A</b><span><strong>Apple Calendar</strong><small>{appleConnected ? "iCloud Calendar · verbunden" : "iCloud Calendar · CalDAV"}</small></span><i>{appleOpen ? "Schließen" : appleConnected ? "✓ Verbunden" : "Zugang prüfen →"}</i></button>
-    {appleOpen && <form className={styles.appleForm} onSubmit={testAppleConnection}><header><span>{appleConnected ? "✓" : "1"}</span><div><strong>{appleConnected ? "Apple Calendar ist verbunden" : "Apple Calendar verbinden"}</strong><p>{appleConnected ? "Synchronisiert eure belegten Zeiten manuell, wann immer sich euer Apple-Kalender geändert hat." : "Für iCloud Calendar benötigt Ouivio ein separates Apple-App-Passwort – niemals euer normales Apple-ID-Passwort."}</p></div></header>{appleConnected ? <><button disabled={syncing} onClick={() => void syncAppleCalendar()} type="button">{syncing ? "Apple Calendar wird synchronisiert …" : "Jetzt synchronisieren"}</button><small>Importiert werden die belegten Zeiten der kommenden 24 Monate. Ouivio schreibt keine Termine zurück.</small></> : <><ol><li>Öffnet eure Apple-Account-Verwaltung.</li><li>Erstellt unter <b>„Anmelden & Sicherheit“</b> ein <b>App-spezifisches Passwort</b>.</li><li>Gebt ihm den Namen <b>„Ouivio Kalender“</b> und kopiert das erzeugte Passwort hierher.</li></ol><a className={styles.appleHelpLink} href="https://account.apple.com" target="_blank" rel="noreferrer">Apple-App-Passwort erstellen <span aria-hidden="true">↗</span></a><aside><b>Wichtig</b><span>Das App-Passwort wird verschlüsselt gespeichert, damit Ouivio belegte Zeiten importieren kann. Ouivio schreibt niemals Termine in euren Apple-Kalender; ihr könnt den Zugang jederzeit bei Apple widerrufen.</span></aside><div className={styles.appleFields}><label>Apple-ID<input aria-invalid={Boolean(appleError)} autoComplete="username" type="email" value={appleId} onChange={(event) => setAppleId(event.target.value)} placeholder="name@icloud.com" required /></label><label>App-spezifisches Passwort<span className={styles.passwordField}><input aria-invalid={Boolean(appleError)} autoComplete="off" type={showApplePassword ? "text" : "password"} value={appPassword} onChange={(event) => setAppPassword(event.target.value)} placeholder="xxxx-xxxx-xxxx-xxxx" required /><button aria-label={showApplePassword ? "Passwort verbergen" : "Passwort anzeigen"} onClick={() => setShowApplePassword((current) => !current)} type="button">{showApplePassword ? "Verbergen" : "Anzeigen"}</button></span></label></div><button disabled={testing}>{testing ? "Apple Calendar wird verbunden …" : "Apple Calendar verbinden"}</button><small>Der Zugang wird verschlüsselt gespeichert und ausschließlich zum Import belegter Zeiten verwendet.</small></>}{appleError && <div className={styles.appleError} role="alert"><strong>Apple Calendar konnte nicht verbunden werden</strong><span>{appleError}</span><small>Prüft Apple-ID und App-spezifisches Passwort. Erstellt bei Bedarf in eurem Apple-Account ein neues Passwort für „Ouivio Kalender“.</small></div>}</form>}
+    {appleOpen && <form className={styles.appleForm} onSubmit={testAppleConnection}><header><span>{appleConnected ? "✓" : "1"}</span><div><strong>{appleConnected ? "Apple Calendar ist verbunden" : "Apple Calendar verbinden"}</strong><p>{appleConnected ? "Ouivio gleicht belegte Zeiten beim Öffnen, beim Zurückkehren in diesen Tab und anschließend alle fünf Minuten automatisch ab." : "Für iCloud Calendar benötigt Ouivio ein separates Apple-App-Passwort – niemals euer normales Apple-ID-Passwort."}</p></div></header>{appleConnected ? <><button disabled={syncing} onClick={() => void syncAppleCalendar()} type="button">{syncing ? "Apple Calendar wird synchronisiert …" : "Jetzt aktualisieren"}</button><small>Importiert werden die belegten Zeiten der kommenden 24 Monate. Ouivio schreibt keine Termine zurück.</small></> : <><ol><li>Öffnet eure Apple-Account-Verwaltung.</li><li>Erstellt unter <b>„Anmelden & Sicherheit“</b> ein <b>App-spezifisches Passwort</b>.</li><li>Gebt ihm den Namen <b>„Ouivio Kalender“</b> und kopiert das erzeugte Passwort hierher.</li></ol><a className={styles.appleHelpLink} href="https://account.apple.com" target="_blank" rel="noreferrer">Apple-App-Passwort erstellen <span aria-hidden="true">↗</span></a><aside><b>Wichtig</b><span>Das App-Passwort wird verschlüsselt gespeichert, damit Ouivio belegte Zeiten importieren kann. Ouivio schreibt niemals Termine in euren Apple-Kalender; ihr könnt den Zugang jederzeit bei Apple widerrufen.</span></aside><div className={styles.appleFields}><label>Apple-ID<input aria-invalid={Boolean(appleError)} autoComplete="username" type="email" value={appleId} onChange={(event) => setAppleId(event.target.value)} placeholder="name@icloud.com" required /></label><label>App-spezifisches Passwort<span className={styles.passwordField}><input aria-invalid={Boolean(appleError)} autoComplete="off" type={showApplePassword ? "text" : "password"} value={appPassword} onChange={(event) => setAppPassword(event.target.value)} placeholder="xxxx-xxxx-xxxx-xxxx" required /><button aria-label={showApplePassword ? "Passwort verbergen" : "Passwort anzeigen"} onClick={() => setShowApplePassword((current) => !current)} type="button">{showApplePassword ? "Verbergen" : "Anzeigen"}</button></span></label></div><button disabled={testing}>{testing ? "Apple Calendar wird verbunden …" : "Apple Calendar verbinden"}</button><small>Der Zugang wird verschlüsselt gespeichert und ausschließlich zum Import belegter Zeiten verwendet.</small></>}{appleError && <div className={styles.appleError} role="alert"><strong>Apple Calendar konnte nicht verbunden werden</strong><span>{appleError}</span><small>Prüft Apple-ID und App-spezifisches Passwort. Erstellt bei Bedarf in eurem Apple-Account ein neues Passwort für „Ouivio Kalender“.</small></div>}</form>}
     {providers.map((provider) => <button type="button" key={provider.name} onClick={() => setNotice(`${provider.name}: Die Verbindung wird nach Apple Calendar ergänzt.`)}><b>{provider.mark}</b><span><strong>{provider.name}</strong><small>{provider.detail}</small></span><i>Demnächst</i></button>)}
     {notice && <p className={styles.notice} role="status">{notice}</p>}<div className={styles.security}>🔒 Zugangsdaten werden verschlüsselt gespeichert und nur für den Import belegter Zeiten verwendet.</div></article>;
 }
