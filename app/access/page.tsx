@@ -3,7 +3,7 @@ import styles from "./access.module.css";
 
 export default function AccessPage() {
   return <main className={styles.shell}>
-    <header><Link className={styles.logo} href="/">Ouivio<span>.</span></Link><Link className={styles.login} href="/login">Bereits ein Konto? Anmelden</Link></header>
+    <header><Link className={styles.logo} href="/index.html#top">Ouivio<span>.</span></Link><Link className={styles.login} href="/login">Bereits ein Konto? Anmelden</Link></header>
     <section className={styles.intro}><small>Ouivio Zugang</small><h1>Wie möchtet ihr<br/>Ouivio nutzen?</h1><p>Wählt euren Einstieg. Nach der Anmeldung führt Ouivio automatisch in den passenden Bereich.</p></section>
     <section className={styles.choices} aria-label="Kontoart auswählen">
       <Link className={styles.choice} href="/login?intent=customer"><span className={styles.icon}>♡</span><small>Für Paare</small><h2>Meine Hochzeit planen</h2><p>Anbieter entdecken, Leistungen zusammenstellen und eure Planung an einem Ort organisieren.</p><b>Kundenkonto starten <i>→</i></b></Link>
