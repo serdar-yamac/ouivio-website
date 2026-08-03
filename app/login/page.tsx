@@ -20,7 +20,10 @@ export default function LoginPage() {
   const [registrationAvailable, setRegistrationAvailable] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [displayName, setDisplayName] = useState("");
-  const [accountType] = useState<"customer" | "partner">("customer");
+  const [businessName, setBusinessName] = useState("");
+  const [partnerCity, setPartnerCity] = useState("");
+  const [partnerCategory, setPartnerCategory] = useState<"location" | "photography" | "catering">("location");
+  const [accountType, setAccountType] = useState<"customer" | "partner">("customer");
   const [success, setSuccess] = useState("");
   const [checkingSession, setCheckingSession] = useState(true);
   const isRouting = useRef(false);
@@ -58,10 +61,11 @@ export default function LoginPage() {
     setRegistrationAvailable(previewRegistrationAvailable);
     const intent = demoUrl.searchParams.get("intent");
     if (intent === "partner") {
-      window.location.replace("/index.html#partner");
-      return;
+      setAccountType("partner");
+      if (previewRegistrationAvailable) setMode("signup");
     }
     if (previewRegistrationAvailable && intent === "customer") {
+      setAccountType("customer");
       setMode("signup");
     }
     if (demoUrl.searchParams.get("confirmed") === "1") {
@@ -103,7 +107,11 @@ export default function LoginPage() {
           email,
           password,
           options: {
-            data: { account_type: accountType, display_name: displayName.trim() },
+            data: {
+              account_type: accountType,
+              display_name: accountType === "partner" ? businessName.trim() : displayName.trim(),
+              ...(accountType === "partner" ? { city: partnerCity.trim(), category: partnerCategory } : {}),
+            },
             emailRedirectTo: `${window.location.origin}/login?confirmed=1`,
           },
         });
@@ -135,18 +143,22 @@ export default function LoginPage() {
         <p className={styles.intro}>{mode === "signup" ? accountType === "partner" ? "Erstellt euer Partnerkonto. Danach richtet ihr Unternehmen, Leistungen, Pakete und Verfügbarkeit ein." : "Erstellt euer Kundenkonto, um eure Auswahl zu speichern und Verfügbarkeiten verbindlich zu prüfen." : "Meldet euch an, um eure persönliche Hochzeitsplanung fortzusetzen."}</p>
 
         {checkingSession ? <div className={styles.sessionCheck} role="status"><strong>Angemeldetes Konto wird geprüft …</strong><span>Wenn ihr bereits angemeldet seid, öffnen wir eure Planung automatisch.</span></div> : <>
-          {registrationAvailable ? <div className={styles.previewNotice} role="status"><strong>Entwicklungs-Preview</strong><span>Die Kundenregistrierung ist hier zum Testen geöffnet. Partner werden während der limitierten Pilotphase persönlich freigeschaltet.</span></div> : <div className={styles.prelaunch} role="status"><strong>Registrierung noch nicht geöffnet</strong><span>Neue Kundenkonten werden erst zum offiziellen Start freigeschaltet.</span></div>}
+          {registrationAvailable ? <div className={styles.previewNotice} role="status"><strong>Entwicklungs-Preview</strong><span>{accountType === "partner" ? "Die Partnerregistrierung ist für den gemeinsamen Marketplace-Test geöffnet. Vor dem Launch wird sie wieder über die Pilotphase gesteuert." : "Die Kundenregistrierung ist hier zum Testen geöffnet. Partner werden während der limitierten Pilotphase persönlich freigeschaltet."}</span></div> : <div className={styles.prelaunch} role="status"><strong>Registrierung noch nicht geöffnet</strong><span>Neue Kundenkonten werden erst zum offiziellen Start freigeschaltet.</span></div>}
 
           {registrationAvailable && mode === "signup" && <button className={styles.existingAccount} onClick={() => { setMode("signin"); setError(""); setSuccess(""); }} type="button"><span>Bereits registriert?</span><strong>Jetzt sicher anmelden →</strong></button>}
           <form className={styles.form} onSubmit={submit}>
-            {mode === "signup" && <label>Eure Namen<input autoComplete="name" onChange={(event) => setDisplayName(event.target.value)} placeholder="z. B. Emma & Noah" required value={displayName}/></label>}
+            {mode === "signup" && (accountType === "partner" ? <>
+              <label>Unternehmensname<input autoComplete="organization" onChange={(event) => setBusinessName(event.target.value)} placeholder="z. B. Studio Rosenlicht" required value={businessName}/></label>
+              <label>Ort<input autoComplete="address-level2" onChange={(event) => setPartnerCity(event.target.value)} placeholder="z. B. Köln" required value={partnerCity}/></label>
+              <label>Anbieterart<select onChange={(event) => setPartnerCategory(event.target.value as "location" | "photography" | "catering")} value={partnerCategory}><option value="location">Location</option><option value="photography">Fotografie</option><option value="catering">Catering</option></select></label>
+            </> : <label>Eure Namen<input autoComplete="name" onChange={(event) => setDisplayName(event.target.value)} placeholder="z. B. Emma & Noah" required value={displayName}/></label>)}
             <label>E-Mail-Adresse<input autoComplete="email" onChange={(event) => setEmail(event.target.value)} placeholder="ihr@beispiel.de" required type="email" value={email}/></label>
             <label>Passwort<input autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password}/></label>
             {error && <p className={styles.error} role="alert">{error}</p>}
             {success && <p className={styles.success} role="status">{success}</p>}
             <button className={styles.submit} disabled={busy} type="submit">{busy ? "Einen Moment …" : mode === "signup" ? "Konto anlegen" : "Sicher anmelden"}</button>
           </form>
-          {registrationAvailable && <button className={styles.modeSwitch} onClick={() => { setMode(current => current === "signin" ? "signup" : "signin"); setError(""); setSuccess(""); }} type="button">{mode === "signin" ? "Noch kein Konto? Jetzt starten" : "Ich möchte ein neues Kundenkonto anlegen"}</button>}
+          {registrationAvailable && <button className={styles.modeSwitch} onClick={() => { setMode(current => current === "signin" ? "signup" : "signin"); setError(""); setSuccess(""); }} type="button">{mode === "signin" ? accountType === "partner" ? "Noch kein Partnerkonto? Jetzt starten" : "Noch kein Konto? Jetzt starten" : accountType === "partner" ? "Ich habe bereits ein Partnerkonto" : "Ich möchte ein neues Kundenkonto anlegen"}</button>}
         </>}
         {partnerDemoAvailable && <Link className={styles.back} href="/partner?demo=1">Partner-Demo ohne Anmeldung öffnen →</Link>}
         <Link className={styles.back} href="/access">← Kontoart auswählen</Link>
