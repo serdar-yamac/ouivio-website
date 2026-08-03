@@ -13,32 +13,37 @@ export type CartPackage = {
   currency: string;
 };
 
+type SavedPackageRow = {
+  entry_type: string;
+  package_id: string;
+  created_at: string;
+  starts_on: string | null;
+  ends_on: string | null;
+  partner_name: string | null;
+  city: string | null;
+  package_name: string;
+  service_type: string;
+  price_amount: number | string;
+  currency: string;
+};
+
 export async function fetchCartPackages(weddingId: string): Promise<CartPackage[]> {
   const { data, error } = await getSupabaseClient()
-    .from("wedding_cart_items")
-    .select("package_id, starts_on, ends_on, created_at, partner_packages!inner(name, price_amount, currency, service_type, partner_profiles!inner(business_name, city))")
-    .eq("wedding_id", weddingId)
-    .order("created_at", { ascending: false });
+    .rpc("get_customer_saved_package_details", { requested_wedding_id: weddingId });
   if (error) throw error;
 
-  return (data ?? []).map((row) => {
-    const packageRow = row.partner_packages as unknown as {
-      name: string; price_amount: number; currency: string; service_type: string;
-      partner_profiles: { business_name: string; city: string | null } | null;
-    };
-    return {
-      packageId: row.package_id,
-      startsOn: row.starts_on,
-      endsOn: row.ends_on,
-      addedAt: row.created_at,
-      partnerName: packageRow.partner_profiles?.business_name ?? "Anbieter",
-      city: packageRow.partner_profiles?.city ?? "Ort folgt",
-      packageName: packageRow.name,
-      serviceType: packageRow.service_type,
-      priceAmount: Number(packageRow.price_amount),
-      currency: packageRow.currency,
-    };
-  });
+  return ((data ?? []) as SavedPackageRow[]).filter((row) => row.entry_type === "cart").map((row) => ({
+    packageId: row.package_id,
+    startsOn: row.starts_on ?? "",
+    endsOn: row.ends_on ?? "",
+    addedAt: row.created_at,
+    partnerName: row.partner_name ?? "Anbieter",
+    city: row.city ?? "Ort folgt",
+    packageName: row.package_name,
+    serviceType: row.service_type,
+    priceAmount: Number(row.price_amount),
+    currency: row.currency,
+  }));
 }
 
 export async function saveCartPackage(
