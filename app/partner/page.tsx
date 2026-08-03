@@ -63,7 +63,7 @@ export default function PartnerDashboard() {
         }
         const supabase = getSupabaseClient();
         const { data } = await supabase.auth.getUser();
-        if (!data.user) return router.replace("/index.html#partner");
+        if (!data.user) return router.replace("/login?intent=partner");
         const account = await ensureAccountProfile(data.user);
         if (account.type !== "partner") return router.replace("/dashboard");
         const partner = await ensurePartnerProfile(data.user.id, account.displayName);
