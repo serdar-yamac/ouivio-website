@@ -146,10 +146,10 @@ function parseIcsEvents(xml: string): ImportedEvent[] {
   const blocks = [...xml.matchAll(/<[^>]*:?calendar-data[^>]*>([\s\S]*?)<\/[^>]*:?calendar-data>/gi)].map((match) => unfold(decodeXml(match[1])));
   return blocks.flatMap((block) => [...block.matchAll(/BEGIN:VEVENT\r?\n([\s\S]*?)END:VEVENT/g)].flatMap((match) => {
     const uid = field(match[1], "UID");
-    const start = field(match[1], "DTSTART");
-    const end = field(match[1], "DTEND");
-    const startsAt = start ? parseIcsDate(start) : null;
-    const endsAt = end ? parseIcsDate(end) : null;
+    const start = dateField(match[1], "DTSTART");
+    const end = dateField(match[1], "DTEND");
+    const startsAt = start ? parseIcsDate(start.value, start.timezone) : null;
+    const endsAt = end ? parseIcsDate(end.value, end.timezone) : null;
     const summary = field(match[1], "SUMMARY");
     return uid && startsAt && endsAt ? [{
       external_event_id: uid,
@@ -162,10 +162,36 @@ function parseIcsEvents(xml: string): ImportedEvent[] {
   }));
 }
 function field(event: string, name: string) { return event.match(new RegExp(`(?:^|\\n)${name}(?:;[^:]*)?:(.+)`))?.[1]?.trim(); }
+function dateField(event: string, name: "DTSTART" | "DTEND") {
+  const match = event.match(new RegExp(`(?:^|\\n)${name}((?:;[^:]*)?):(.+)`));
+  if (!match) return null;
+  const timezone = match[1].match(/TZID=([^;:]+)/i)?.[1];
+  return { value: match[2].trim(), timezone };
+}
 function decodeIcsText(value: string) { return value.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1"); }
-function parseIcsDate(value: string) {
+function parseIcsDate(value: string, timezone?: string) {
   if (/^\d{8}$/.test(value)) return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T00:00:00Z`;
   const compact = value.replace(/Z$/, "");
   if (!/^\d{8}T\d{6}$/.test(compact)) return null;
-  return `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}T${compact.slice(9, 11)}:${compact.slice(11, 13)}:${compact.slice(13, 15)}${value.endsWith("Z") ? "Z" : "+00:00"}`;
+  if (value.endsWith("Z")) return `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}T${compact.slice(9, 11)}:${compact.slice(11, 13)}:${compact.slice(13, 15)}Z`;
+  return localTimeToUtc(compact, timezone || "Europe/Berlin");
+}
+function localTimeToUtc(value: string, timezone: string) {
+  const year = Number(value.slice(0, 4)); const month = Number(value.slice(4, 6)); const day = Number(value.slice(6, 8));
+  const hour = Number(value.slice(9, 11)); const minute = Number(value.slice(11, 13)); const second = Number(value.slice(13, 15));
+  const intended = Date.UTC(year, month - 1, day, hour, minute, second);
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    let instant = intended;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const parts = Object.fromEntries(formatter.formatToParts(new Date(instant)).filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+      const observed = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+      instant = intended - (observed - instant);
+    }
+    return new Date(instant).toISOString();
+  } catch {
+    // Unknown custom TZIDs are rare; keeping the original local wall time is
+    // safer than applying a wrong offset from a different timezone.
+    return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T${value.slice(9, 11)}:${value.slice(11, 13)}:${value.slice(13, 15)}Z`;
+  }
 }
