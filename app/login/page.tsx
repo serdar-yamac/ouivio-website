@@ -76,7 +76,11 @@ export default function LoginPage() {
       setMode("signup");
     }
     if (demoUrl.searchParams.get("confirmed") === "1") {
-      setSuccess("E-Mail bestätigt. Ihr könnt euch jetzt anmelden.");
+      // A confirmation link may be opened on another device, where Supabase
+      // cannot restore the browser session. Always show the sign-in form as
+      // the safe fallback instead of returning the person to registration.
+      setMode("signin");
+      setSuccess("E-Mail bestätigt. Meldet euch jetzt mit eurer E-Mail-Adresse und eurem Passwort an.");
     }
     const supabase = getSupabaseClient();
     const restoreSession = async () => {
