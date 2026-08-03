@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
   try {
     const credentials = decrypt(encryptedCredentials, encryptionKey);
     const authorization = `Basic ${Buffer.from(`${credentials.appleId}:${credentials.appPassword}`, "utf8").toString("base64")}`;
-    const events = await readAppleEvents(authorization);
+    const { calendars, events } = await readAppleEvents(authorization);
+    console.info("[apple-calendar-sync] imported", { calendars, events: events.length });
 
     // A sync replaces only Apple-originated blocking times. Native Ouivio events remain untouched.
     const { error: deleteError } = await supabase
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function readAppleEvents(authorization: string): Promise<ImportedEvent[]> {
+async function readAppleEvents(authorization: string): Promise<{ calendars: number; events: ImportedEvent[] }> {
   const headers = { Authorization: authorization, Depth: "0", "Content-Type": davContentType };
   const principalXml = await dav(appleRoot, headers, "<propfind xmlns=\"DAV:\"><prop><current-user-principal/></prop></propfind>");
   const principal = hrefForProperty(principalXml, "current-user-principal");
@@ -105,7 +106,7 @@ async function readAppleEvents(authorization: string): Promise<ImportedEvent[]> 
     });
     if (response.ok || response.status === 207) result.push(...parseIcsEvents(await response.text()));
   }
-  return Array.from(new Map(result.map((event) => [event.external_event_id, event])).values());
+  return { calendars: calendars.length, events: Array.from(new Map(result.map((event) => [event.external_event_id, event])).values()) };
 }
 
 async function dav(url: string, headers: Record<string, string>, body: string) {
@@ -130,7 +131,14 @@ function hrefForProperty(xml: string, property: "current-user-principal" | "cale
   return match?.[1];
 }
 function calendarHrefs(xml: string) {
-  return [...xml.matchAll(/<[^>]*:?response\b[\s\S]*?<[^>]*:?href[^>]*>([^<]+)<\/[^>]*:?href>[\s\S]*?<[^>]*:?resourcetype[^>]*>[\s\S]*?<[^>]*:?calendar\b[^>]*\/?>(?:[\s\S]*?)<\/[^>]*:?resourcetype>[\s\S]*?<\/[^>]*:?response>/gi)].map((match) => match[1]);
+  // Each DAV response describes one resource. Inspect blocks separately so the calendar-home
+  // response cannot be mistaken for a calendar collection that appears later in the document.
+  return [...xml.matchAll(/<[^>]*:?response\b[^>]*>([\s\S]*?)<\/[^>]*:?response>/gi)].flatMap((response) => {
+    const block = response[1];
+    if (!/<[^>]*:?calendar\b[^>]*\/?\s*>/i.test(block)) return [];
+    const href = block.match(/<[^>]*:?href[^>]*>([^<]+)<\/[^>]*:?href>/i)?.[1];
+    return href ? [href] : [];
+  });
 }
 function caldavStamp(days: number) { return new Date(Date.now() + days * 86_400_000).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z"); }
 function decodeXml(value: string) { return value.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&#13;/g, "\r"); }
