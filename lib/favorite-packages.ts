@@ -12,6 +12,19 @@ export type FavoritePackage = {
   currency: string;
 };
 
+type SavedPackageRow = {
+  entry_type: string;
+  package_id: string;
+  created_at: string;
+  partner_name: string | null;
+  city: string | null;
+  package_name: string;
+  description: string | null;
+  service_type: string;
+  price_amount: number | string;
+  currency: string;
+};
+
 export async function fetchFavoritePackageIds(weddingId: string) {
   const { data, error } = await getSupabaseClient()
     .from("partner_package_favorites")
@@ -41,27 +54,18 @@ export async function toggleFavoritePackage(weddingId: string, packageId: string
 
 export async function fetchFavoritePackages(weddingId: string): Promise<FavoritePackage[]> {
   const { data, error } = await getSupabaseClient()
-    .from("partner_package_favorites")
-    .select("package_id, created_at, partner_packages!inner(name, description, price_amount, currency, service_type, partner_profiles!inner(business_name, city))")
-    .eq("wedding_id", weddingId)
-    .order("created_at", { ascending: false });
+    .rpc("get_customer_saved_package_details", { requested_wedding_id: weddingId });
   if (error) throw error;
 
-  return (data ?? []).map((row) => {
-    const packageRow = row.partner_packages as unknown as {
-      name: string; description: string | null; price_amount: number; currency: string; service_type: string;
-      partner_profiles: { business_name: string; city: string | null } | null;
-    };
-    return {
-      packageId: row.package_id,
-      savedAt: row.created_at,
-      partnerName: packageRow.partner_profiles?.business_name ?? "Anbieter",
-      city: packageRow.partner_profiles?.city ?? "Ort folgt",
-      packageName: packageRow.name,
-      serviceType: packageRow.service_type,
-      description: packageRow.description ?? "",
-      priceAmount: Number(packageRow.price_amount),
-      currency: packageRow.currency,
-    };
-  });
+  return ((data ?? []) as SavedPackageRow[]).filter((row) => row.entry_type === "favorite").map((row) => ({
+    packageId: row.package_id,
+    savedAt: row.created_at,
+    partnerName: row.partner_name ?? "Anbieter",
+    city: row.city ?? "Ort folgt",
+    packageName: row.package_name,
+    serviceType: row.service_type,
+    description: row.description ?? "",
+    priceAmount: Number(row.price_amount),
+    currency: row.currency,
+  }));
 }
