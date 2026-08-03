@@ -147,7 +147,7 @@ function CartContent() {
   if (!items.length) return <main className={styles.loading}>Keine buchbaren Leistungen gewählt. <Link href="/discover">Zur Auswahl</Link></main>;
 
   return <main className={styles.page}>
-    <header><Link href="/">Ouivio<span>.</span></Link><Link href="/discover">← Zurück zur Auswahl</Link><small>{hasLivePackages ? "Verfügbarkeit" : "Checkout-Preview"}</small></header>
+    <header><Link href="/index.html#top">Ouivio<span>.</span></Link><Link href="/discover">← Zurück zur Auswahl</Link><small>{hasLivePackages ? "Verfügbarkeit" : "Checkout-Preview"}</small></header>
     <section className={styles.layout}>
       <main>
         <p className={styles.eyebrow}>Direktbuchung</p>
