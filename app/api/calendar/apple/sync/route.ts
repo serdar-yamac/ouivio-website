@@ -71,6 +71,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, imported: events.length });
   } catch (error) {
+    // Never log credentials or Apple responses; the reason is enough to diagnose a failed sync.
+    console.error("[apple-calendar-sync] failed", { reason: error instanceof Error ? error.message : "unknown" });
     return NextResponse.json(
       { message: error instanceof Error ? error.message : "Apple Calendar konnte nicht synchronisiert werden." },
       { status: 502 },
@@ -81,11 +83,11 @@ export async function POST(request: NextRequest) {
 async function readAppleEvents(authorization: string): Promise<ImportedEvent[]> {
   const headers = { Authorization: authorization, Depth: "0", "Content-Type": davContentType };
   const principalXml = await dav(appleRoot, headers, "<propfind xmlns=\"DAV:\"><prop><current-user-principal/></prop></propfind>");
-  const principal = firstHref(principalXml);
+  const principal = hrefForProperty(principalXml, "current-user-principal");
   if (!principal) throw new Error("Apple hat kein Kalenderkonto zurückgegeben.");
 
   const homeXml = await dav(new URL(principal, appleRoot).toString(), headers, "<propfind xmlns=\"DAV:\" xmlns:c=\"urn:ietf:params:xml:ns:caldav\"><prop><c:calendar-home-set/></prop></propfind>");
-  const home = firstHref(homeXml);
+  const home = hrefForProperty(homeXml, "calendar-home-set");
   if (!home) throw new Error("Apple-Kalenderordner konnte nicht gelesen werden.");
 
   const collectionsXml = await dav(new URL(home, appleRoot).toString(), { ...headers, Depth: "1" }, "<propfind xmlns=\"DAV:\"><prop><resourcetype/></prop></propfind>");
@@ -123,7 +125,10 @@ function decrypt(value: string, rawKey: string): Credentials {
   return JSON.parse(Buffer.concat([decipher.update(Buffer.from(ciphertext, "base64url")), decipher.final()]).toString("utf8")) as Credentials;
 }
 
-function firstHref(xml: string) { return xml.match(/<[^>]*:?href[^>]*>([^<]+)<\/[^>]*:?href>/i)?.[1]; }
+function hrefForProperty(xml: string, property: "current-user-principal" | "calendar-home-set") {
+  const match = xml.match(new RegExp(`<[^>]*:?${property}\\b[^>]*>[\\s\\S]*?<[^>]*:?href[^>]*>([^<]+)<\\/[^>]*:?href>[\\s\\S]*?<\\/[^>]*:?${property}>`, "i"));
+  return match?.[1];
+}
 function calendarHrefs(xml: string) {
   return [...xml.matchAll(/<[^>]*:?response\b[\s\S]*?<[^>]*:?href[^>]*>([^<]+)<\/[^>]*:?href>[\s\S]*?<[^>]*:?resourcetype[^>]*>[\s\S]*?<[^>]*:?calendar\b[^>]*\/?>(?:[\s\S]*?)<\/[^>]*:?resourcetype>[\s\S]*?<\/[^>]*:?response>/gi)].map((match) => match[1]);
 }
