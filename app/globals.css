@@ -524,6 +524,10 @@ button.card {
   padding: 12px 0;
   margin-top: 10px;
 }
+.saved-package-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.saved-package-actions button { margin-top: 0; }
+.saved-package-actions button.danger { color: #8d5d55; }
+.saved-package-actions button:disabled { cursor: wait; opacity: .65; }
 .guest-table {
   max-width: 850px;
 }
