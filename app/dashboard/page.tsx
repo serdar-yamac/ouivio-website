@@ -31,8 +31,8 @@ import {
 import { ensureWeddingWorkspace } from "../../lib/workspace";
 import { ensureAccountProfile } from "../../lib/account";
 import { readDemoBooking, type DemoBooking } from "../../lib/demo-booking";
-import { fetchFavoritePackages, type FavoritePackage } from "../../lib/favorite-packages";
-import { fetchCartPackages, type CartPackage } from "../../lib/cart-items";
+import { fetchFavoritePackages, toggleFavoritePackage, type FavoritePackage } from "../../lib/favorite-packages";
+import { fetchCartPackages, removeCartPackage, type CartPackage } from "../../lib/cart-items";
 import {
   createCustomerEvent,
   deleteCustomerEvent,
@@ -111,6 +111,8 @@ export default function Home() {
   const [demoBooking, setDemoBooking] = useState<DemoBooking | null>(null);
   const [favoritePackages, setFavoritePackages] = useState<FavoritePackage[]>([]);
   const [cartPackages, setCartPackages] = useState<CartPackage[]>([]);
+  const [savedPackageAction, setSavedPackageAction] = useState<string | null>(null);
+  const [savedPackageError, setSavedPackageError] = useState("");
   const [weddingPlan, setWeddingPlan] = useState<WeddingPlan | null>(null);
   const [partnerNamesInput, setPartnerNamesInput] = useState("");
   const [weddingDateInput, setWeddingDateInput] = useState("");
@@ -155,6 +157,34 @@ export default function Home() {
     ...(weddingPlan?.weddingDate ? { start: weddingPlan.weddingDate, end: weddingPlan.weddingDate } : {}),
     ...(weddingPlan?.location ? { city: weddingPlan.location } : {}),
   }).toString()}`;
+
+  const removeCartItem = async (packageId: string) => {
+    if (!weddingId || savedPackageAction) return;
+    setSavedPackageAction(`cart-${packageId}`);
+    setSavedPackageError("");
+    try {
+      await removeCartPackage(weddingId, packageId);
+      setCartPackages((items) => items.filter((item) => item.packageId !== packageId));
+    } catch {
+      setSavedPackageError("Der Warenkorb konnte gerade nicht aktualisiert werden. Bitte versucht es erneut.");
+    } finally {
+      setSavedPackageAction(null);
+    }
+  };
+
+  const removeFavoriteItem = async (packageId: string) => {
+    if (!weddingId || savedPackageAction) return;
+    setSavedPackageAction(`favorite-${packageId}`);
+    setSavedPackageError("");
+    try {
+      await toggleFavoritePackage(weddingId, packageId, true);
+      setFavoritePackages((items) => items.filter((item) => item.packageId !== packageId));
+    } catch {
+      setSavedPackageError("Der Favorit konnte gerade nicht entfernt werden. Bitte versucht es erneut.");
+    } finally {
+      setSavedPackageAction(null);
+    }
+  };
 
   const toggleTask = async (id: string) => {
     const currentTask = tasks.find((task) => task.id === id);
@@ -1249,14 +1279,15 @@ export default function Home() {
           >
             <section style={{ marginBottom: 28 }}>
               <div className="card-head"><div><small>Bereit für den nächsten Schritt</small><h2>Eure Auswahl · Warenkorb</h2><p>Konkrete Pakete für euren Wunschtermin. Noch keine Reservierung und keine Zahlung.</p></div><button onClick={() => router.push(discoverHref)}>Auswahl ergänzen →</button></div>
+              {savedPackageError && <p className="sync-error" role="alert">{savedPackageError}</p>}
               <div className="vendor-grid">
-                {cartPackages.length === 0 ? <article className="card empty-vendor-card"><span aria-hidden="true">✓</span><h2>Noch nichts im Warenkorb</h2><p>Fügt ein passendes Live-Angebot aus der Suche hinzu, wenn ihr es für euren Termin weiterverfolgen möchtet.</p><button className="primary-button" onClick={() => router.push(discoverHref)}>Anbieter entdecken →</button></article> : cartPackages.map((item) => <article className="card vendor-card" key={item.packageId}><span className="match">✓ Im Warenkorb</span><h2>{item.partnerName}</h2><p>{item.serviceType} · {item.city}<br/>{item.packageName}<br/><small>{new Date(`${item.startsOn}T12:00:00`).toLocaleDateString("de-DE")}–{new Date(`${item.endsOn}T12:00:00`).toLocaleDateString("de-DE")}</small></p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: item.currency }).format(item.priceAmount)}</strong><button onClick={() => router.push(discoverHref)}>Auswahl bearbeiten →</button></article>)}
+                {cartPackages.length === 0 ? <article className="card empty-vendor-card"><span aria-hidden="true">✓</span><h2>Noch nichts im Warenkorb</h2><p>Fügt ein passendes Live-Angebot aus der Suche hinzu, wenn ihr es für euren Termin weiterverfolgen möchtet.</p><button className="primary-button" onClick={() => router.push(discoverHref)}>Anbieter entdecken →</button></article> : cartPackages.map((item) => <article className="card vendor-card" key={item.packageId}><span className="match">✓ Im Warenkorb</span><h2>{item.partnerName}</h2><p>{item.serviceType} · {item.city}<br/>{item.packageName}<br/><small>{new Date(`${item.startsOn}T12:00:00`).toLocaleDateString("de-DE")}–{new Date(`${item.endsOn}T12:00:00`).toLocaleDateString("de-DE")}</small></p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: item.currency }).format(item.priceAmount)}</strong><div className="saved-package-actions"><button onClick={() => router.push(discoverHref)} type="button">Zur Suche →</button><button className="danger" disabled={Boolean(savedPackageAction)} onClick={() => void removeCartItem(item.packageId)} type="button">{savedPackageAction === `cart-${item.packageId}` ? "Wird entfernt …" : "Entfernen"}</button></div></article>)}
               </div>
             </section>
             <section>
               <div className="card-head"><div><small>Unverbindlich vorgemerkt</small><h2>Favoriten</h2><p>Interessante Angebote zum Vergleichen – unabhängig von eurem Warenkorb.</p></div></div>
             <div className="vendor-grid">
-              {favoritePackages.length === 0 ? <article className="card empty-vendor-card"><span aria-hidden="true">♡</span><h2>Beginnt mit euren Favoriten</h2><p>Hier erscheinen ausschließlich Anbieter, die ihr selbst in der Ouivio-Suche gemerkt habt.</p><button className="primary-button" onClick={() => router.push(discoverHref)}>Anbieter entdecken →</button></article> : favoritePackages.map((favorite) => <article className="card vendor-card" key={favorite.packageId}><span className="match">♥ Gemerkt</span><h2>{favorite.partnerName}</h2><p>{favorite.serviceType} · {favorite.city}<br/>{favorite.packageName}</p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: favorite.currency }).format(favorite.priceAmount)}</strong><button onClick={() => router.push(discoverHref)}>Angebot ansehen →</button></article>)}
+              {favoritePackages.length === 0 ? <article className="card empty-vendor-card"><span aria-hidden="true">♡</span><h2>Beginnt mit euren Favoriten</h2><p>Hier erscheinen ausschließlich Anbieter, die ihr selbst in der Ouivio-Suche gemerkt habt.</p><button className="primary-button" onClick={() => router.push(discoverHref)}>Anbieter entdecken →</button></article> : favoritePackages.map((favorite) => <article className="card vendor-card" key={favorite.packageId}><span className="match">♥ Gemerkt</span><h2>{favorite.partnerName}</h2><p>{favorite.serviceType} · {favorite.city}<br/>{favorite.packageName}</p><strong>{new Intl.NumberFormat("de-DE", { style: "currency", currency: favorite.currency }).format(favorite.priceAmount)}</strong><div className="saved-package-actions"><button onClick={() => router.push(discoverHref)} type="button">In Suche ansehen →</button><button className="danger" disabled={Boolean(savedPackageAction)} onClick={() => void removeFavoriteItem(favorite.packageId)} type="button">{savedPackageAction === `favorite-${favorite.packageId}` ? "Wird entfernt …" : "Entfernen"}</button></div></article>)}
             </div>
             </section>
           </Page>
