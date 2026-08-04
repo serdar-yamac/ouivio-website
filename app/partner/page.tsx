@@ -179,6 +179,9 @@ function CalendarConnections({ onSynced }: { onSynced: () => Promise<void> }) {
   const [appleError, setAppleError] = useState("");
   const [showApplePassword, setShowApplePassword] = useState(false);
   const [appleConnected, setAppleConnected] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [microsoftConnected, setMicrosoftConnected] = useState(false);
+  const [connectingProvider, setConnectingProvider] = useState<"google" | "microsoft" | "">("");
   const [syncing, setSyncing] = useState(false);
   const lastAutomaticSync = useRef(0);
 
@@ -187,8 +190,24 @@ function CalendarConnections({ onSynced }: { onSynced: () => Promise<void> }) {
     void (async () => {
       const { data: sessionData } = await getSupabaseClient().auth.getSession();
       if (!sessionData.session?.user || !active) return;
-      const { data } = await getSupabaseClient().from("calendar_connections").select("id").eq("provider", "apple").eq("status", "connected").maybeSingle();
-      if (active) setAppleConnected(Boolean(data));
+      const { data } = await getSupabaseClient().from("calendar_connections").select("provider").eq("status", "connected");
+      if (active) {
+        setAppleConnected(Boolean(data?.some((item) => item.provider === "apple")));
+        setGoogleConnected(Boolean(data?.some((item) => item.provider === "google")));
+        setMicrosoftConnected(Boolean(data?.some((item) => item.provider === "microsoft")));
+        const token = sessionData.session.access_token;
+        for (const provider of ["google", "microsoft"] as const) {
+          if (data?.some((item) => item.provider === provider)) {
+            void fetch(`/api/calendar/${provider}/sync`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).then(async (response) => {
+              if (response.ok && active) await onSynced();
+            });
+          }
+        }
+        const status = new URLSearchParams(window.location.search).get("calendar");
+        if (status === "google-connected") setNotice("Google Calendar ist verbunden. Eure belegten Zeiten werden jetzt importiert.");
+        if (status === "microsoft-connected") setNotice("Outlook / Microsoft 365 ist verbunden. Eure belegten Zeiten werden jetzt importiert.");
+        if (status?.endsWith("-error")) setNotice("Die Kalenderfreigabe wurde nicht abgeschlossen. Bitte versucht es erneut.");
+      }
     })();
     return () => { active = false; };
   }, []);
@@ -233,11 +252,26 @@ function CalendarConnections({ onSynced }: { onSynced: () => Promise<void> }) {
     const interval = window.setInterval(synchronizeWhenVisible, 5 * 60_000);
     return () => { document.removeEventListener("visibilitychange", synchronizeWhenVisible); window.clearInterval(interval); };
   }, [appleConnected]);
-  const providers = [{ name: "Google Calendar", mark: "G", detail: "Zwei-Wege-Synchronisation" }, { name: "Outlook / Microsoft 365", mark: "M", detail: "Microsoft Graph Kalender" }];
+  const connectProvider = async (provider: "google" | "microsoft") => {
+    if (connectingProvider) return;
+    setConnectingProvider(provider); setNotice("");
+    try {
+      const { data } = await getSupabaseClient().auth.getSession();
+      if (!data.session?.access_token) throw new Error("Bitte meldet euch zuerst erneut als Partner an.");
+      const response = await fetch(`/api/calendar/${provider}/connect`, { method: "POST", headers: { Authorization: `Bearer ${data.session.access_token}` } });
+      const result = await response.json() as { url?: string; message?: string };
+      if (!response.ok || !result.url) throw new Error(result.message || "Die Kalenderfreigabe konnte nicht gestartet werden.");
+      window.location.assign(result.url);
+    } catch (connectionError) { setNotice(connectionError instanceof Error ? connectionError.message : "Die Kalenderfreigabe konnte nicht gestartet werden."); setConnectingProvider(""); }
+  };
+  const providers = [
+    { provider: "google" as const, name: "Google Calendar", mark: "G", detail: "Google OAuth · nur belegte Zeiten", connected: googleConnected },
+    { provider: "microsoft" as const, name: "Outlook / Microsoft 365", mark: "M", detail: "Microsoft OAuth · nur belegte Zeiten", connected: microsoftConnected },
+  ];
   return <article className={styles.connections}><div><small>Schnittstellen</small><h2>Kalender verbinden</h2><p>Importiert auf Wunsch belegte Zeiten aus einem verbundenen Kalender. Ouivio schreibt niemals Termine zurück.</p></div>
     <button type="button" className={styles.appleConnection} onClick={() => setAppleOpen((current) => !current)} aria-expanded={appleOpen}><b>A</b><span><strong>Apple Calendar</strong><small>{appleConnected ? "iCloud Calendar · verbunden" : "iCloud Calendar · CalDAV"}</small></span><i>{appleOpen ? "Schließen" : appleConnected ? "✓ Verbunden" : "Zugang prüfen →"}</i></button>
     {appleOpen && <form className={styles.appleForm} onSubmit={testAppleConnection}><header><span>{appleConnected ? "✓" : "1"}</span><div><strong>{appleConnected ? "Apple Calendar ist verbunden" : "Apple Calendar verbinden"}</strong><p>{appleConnected ? "Ouivio gleicht belegte Zeiten beim Öffnen, beim Zurückkehren in diesen Tab und anschließend alle fünf Minuten automatisch ab." : "Für iCloud Calendar benötigt Ouivio ein separates Apple-App-Passwort – niemals euer normales Apple-ID-Passwort."}</p></div></header>{appleConnected ? <><button disabled={syncing} onClick={() => void syncAppleCalendar()} type="button">{syncing ? "Apple Calendar wird synchronisiert …" : "Jetzt aktualisieren"}</button><small>Importiert werden die belegten Zeiten der kommenden 24 Monate inklusive Titel, ausschließlich in euren privaten Partnerkalender. Ouivio schreibt keine Termine zurück.</small></> : <><ol><li>Öffnet eure Apple-Account-Verwaltung.</li><li>Erstellt unter <b>„Anmelden & Sicherheit“</b> ein <b>App-spezifisches Passwort</b>.</li><li>Gebt ihm den Namen <b>„Ouivio Kalender“</b> und kopiert das erzeugte Passwort hierher.</li></ol><a className={styles.appleHelpLink} href="https://account.apple.com" target="_blank" rel="noreferrer">Apple-App-Passwort erstellen <span aria-hidden="true">↗</span></a><aside><b>Wichtig</b><span>Das App-Passwort wird verschlüsselt gespeichert, damit Ouivio belegte Zeiten importieren kann. Ouivio schreibt niemals Termine in euren Apple-Kalender; ihr könnt den Zugang jederzeit bei Apple widerrufen.</span></aside><div className={styles.appleFields}><label>Apple-ID<input aria-invalid={Boolean(appleError)} autoComplete="username" type="email" value={appleId} onChange={(event) => setAppleId(event.target.value)} placeholder="name@icloud.com" required /></label><label>App-spezifisches Passwort<span className={styles.passwordField}><input aria-invalid={Boolean(appleError)} autoComplete="off" type={showApplePassword ? "text" : "password"} value={appPassword} onChange={(event) => setAppPassword(event.target.value)} placeholder="xxxx-xxxx-xxxx-xxxx" required /><button aria-label={showApplePassword ? "Passwort verbergen" : "Passwort anzeigen"} onClick={() => setShowApplePassword((current) => !current)} type="button">{showApplePassword ? "Verbergen" : "Anzeigen"}</button></span></label></div><button disabled={testing}>{testing ? "Apple Calendar wird verbunden …" : "Apple Calendar verbinden"}</button><small>Der Zugang wird verschlüsselt gespeichert und ausschließlich zum Import belegter Zeiten verwendet.</small></>}{appleError && <div className={styles.appleError} role="alert"><strong>Apple Calendar konnte nicht verbunden werden</strong><span>{appleError}</span><small>Prüft Apple-ID und App-spezifisches Passwort. Erstellt bei Bedarf in eurem Apple-Account ein neues Passwort für „Ouivio Kalender“.</small></div>}</form>}
-    {providers.map((provider) => <button type="button" key={provider.name} onClick={() => setNotice(`${provider.name}: Die Verbindung wird nach Apple Calendar ergänzt.`)}><b>{provider.mark}</b><span><strong>{provider.name}</strong><small>{provider.detail}</small></span><i>Demnächst</i></button>)}
+    {providers.map((provider) => <button type="button" disabled={Boolean(connectingProvider)} key={provider.name} onClick={() => provider.connected ? setNotice(`${provider.name} ist verbunden. Der Hintergrundabgleich übernimmt belegte Zeiten automatisch; im Feature-Preview erfolgt er beim Öffnen des Dashboards.`) : void connectProvider(provider.provider)}><b>{provider.mark}</b><span><strong>{provider.name}</strong><small>{provider.connected ? `${provider.detail.split(" · ")[0]} · verbunden` : provider.detail}</small></span><i>{provider.connected ? "✓ Verbunden" : connectingProvider === provider.provider ? "Wird geöffnet …" : "Verbinden →"}</i></button>)}
     {notice && <p className={styles.notice} role="status">{notice}</p>}<div className={styles.security}>🔒 Zugangsdaten werden verschlüsselt gespeichert und nur für den Import belegter Zeiten verwendet.</div></article>;
 }
 type DemoChatMessage = { id: string; from: "customer" | "partner"; text: string; time: string };
