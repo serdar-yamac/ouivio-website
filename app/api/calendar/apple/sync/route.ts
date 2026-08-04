@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { syncAppleCalendar } from "@/lib/apple-calendar-sync";
+import { calendarEncryptionKey } from "@/lib/calendar-credentials";
 
 export const runtime = "nodejs";
 
@@ -8,7 +9,7 @@ export async function POST(request: NextRequest) {
   const accessToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const encryptionKey = process.env.APPLE_CALENDAR_ENCRYPTION_KEY;
+  const encryptionKey = calendarEncryptionKey();
   if (!accessToken || !supabaseUrl || !supabaseKey || !encryptionKey) return NextResponse.json({ message: "Bitte meldet euch erneut an." }, { status: 401 });
   const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${accessToken}` } } });
   const { data: authData } = await supabase.auth.getUser(accessToken);
