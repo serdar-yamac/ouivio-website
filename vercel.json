@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/cron/apple-calendar-sync",
+      "path": "/api/cron/calendar-sync",
       "schedule": "*/5 * * * *"
     }
   ]
