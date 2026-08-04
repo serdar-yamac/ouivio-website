@@ -328,6 +328,7 @@ Priorität 3 – Qualität und Betrieb:
 
 ## Letzter Arbeitsschritt
 
+- Ganztägige Apple-Termine verwenden nun ebenfalls die Apple- beziehungsweise lokale Zeitzone für Anfang und Ende. Ein ganzer iCloud-Block sperrt dadurch den vollständigen lokalen Hochzeitstag in der Ouivio-Verfügbarkeit, auch an Tagen mit Sommerzeitumstellung.
 - Apple-Calendar-Zeitzonen werden beim Import nun aus `TZID` (etwa `Europe/Berlin`) gelesen; schwebende iCloud-Zeiten ohne UTC-Markierung werden für die aktuelle Pilotregion als europäische Ortszeit behandelt. Damit übernimmt Ouivio beispielsweise einen in Köln um 18 Uhr angelegten Apple-Termin als 18 Uhr statt fälschlich als UTC-Zeit. Nach dem Abgleich ersetzt der Import die bisherige Sperrzeit dieses Apple-Termins.
 - Apple-Importe übernehmen auf Wunsch die Ereignistitel in den ausschließlich eigentümergeschützten Partnerkalender. Öffentliche Suchergebnisse erhalten weiterhin ausschließlich die Verfügbarkeitsinformation und niemals Kalendernamen, Titel, Orte oder Notizen. Fehlt ein Apple-Titel, verwendet Ouivio weiter „Belegt · Apple Calendar“.
 - Der Partner-Registrierungseinstieg erklärt bei einer bestehenden Kundensitzung nicht nur den Kontokonflikt, sondern bietet nun unmittelbar den sichtbaren, roten Rückweg „Zum Kunden-Dashboard →“. Eine neue Partnerregistrierung bleibt bewusst eine getrennte Aktion mit lokaler Abmeldung und anderer E-Mail-Adresse. TypeScript-Prüfung und optimierter Next.js-Production-Build erfolgreich; nur die drei bekannten CSS-Autoprefixer-Hinweise bleiben bestehen.
