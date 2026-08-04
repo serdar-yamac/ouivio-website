@@ -9,6 +9,7 @@ import { createPartnerDemoEvents, getCustomerDemoBookingEvent, isPartnerDemoAllo
 import { deletePortfolioItem, fetchPortfolio, updatePartnerCategory, updatePartnerProfile, uploadPortfolioImage, type PartnerCategory, type PortfolioItem } from "../../lib/partner-profile";
 import { createPartnerPackage, deletePartnerPackage, fetchPartnerPackages, updatePartnerPackage, type PartnerPackage, type PartnerPackageInput } from "../../lib/partner-packages";
 import { fetchPartnerServiceAreas, savePartnerServiceArea, type PartnerServiceArea } from "../../lib/partner-service-areas";
+import { createPartnerAvailabilityBlackout, deletePartnerAvailabilityBlackout, fetchPartnerAvailability, savePartnerAvailabilityRule, type PartnerAvailabilityBlackout, type PartnerAvailabilityRule } from "../../lib/partner-availability";
 import { getSupabaseClient } from "../../lib/supabase";
 import styles from "./partner.module.css";
 import communicationStyles from "./communication.module.css";
@@ -44,6 +45,8 @@ export default function PartnerDashboard() {
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [packages, setPackages] = useState<PartnerPackage[]>([]);
   const [serviceAreas, setServiceAreas] = useState<PartnerServiceArea[]>([]);
+  const [availabilityRules, setAvailabilityRules] = useState<PartnerAvailabilityRule[]>([]);
+  const [availabilityBlackouts, setAvailabilityBlackouts] = useState<PartnerAvailabilityBlackout[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -58,6 +61,8 @@ export default function PartnerDashboard() {
           setEvents(customerBooking ? [...createPartnerDemoEvents(), customerBooking] : createPartnerDemoEvents());
           setPackages(createPartnerDemoPackages());
           setServiceAreas(createDemoServiceAreas());
+          setAvailabilityRules([{ id: "demo-availability", partnerId: "demo", resourceKey: "all", allowedWeekdays: [6], dailyStartsAt: "10:00", dailyEndsAt: "22:00", minNoticeHours: 48, maxAdvanceDays: 365, blockGermanPublicHolidays: true }]);
+          setAvailabilityBlackouts([{ id: "demo-break", partnerId: "demo", resourceKey: "all", label: "Sommerurlaub", startsOn: "2027-07-19", endsOn: "2027-08-01" }]);
           setReady(true);
           return;
         }
@@ -78,6 +83,9 @@ export default function PartnerDashboard() {
         if (partnerCategory === "photography") setPortfolio(await fetchPortfolio(partner.id as string));
         setPackages(await fetchPartnerPackages(partner.id as string));
         setServiceAreas(await fetchPartnerServiceAreas(partner.id as string));
+        const availability = await fetchPartnerAvailability(partner.id as string);
+        setAvailabilityRules(availability.rules);
+        setAvailabilityBlackouts(availability.blackouts);
         setReady(true);
       } catch { if (active) setError("Das Partner-Dashboard konnte nicht geladen werden."); }
     })();
@@ -157,6 +165,7 @@ export default function PartnerDashboard() {
       </>}
       {view === "Profil" && <>
         <PartnerProfileSetup businessName={businessName} category={category} city={city} demoMode={demoMode} onSave={async (next) => { if (demoMode) { setBusinessName(next.businessName); setCity(next.city); setCategory(next.category); return; } const saved = await updatePartnerProfile(partnerId, next); setBusinessName(saved.businessName); setCity(saved.city); setCategory(saved.category); }}/>
+        <PartnerAvailabilitySettings demoMode={demoMode} partnerId={partnerId} packages={packages} rules={availabilityRules} blackouts={availabilityBlackouts} onRulesChange={setAvailabilityRules} onBlackoutsChange={setAvailabilityBlackouts}/>
         <ServiceAreaSettings demoMode={demoMode} items={serviceAreas} partnerId={partnerId} onChange={setServiceAreas}/>
       </>}
       {view === "Leistungen" && category && <>
@@ -305,6 +314,76 @@ function icon(view: View) { return view === "Übersicht" ? "⌂" : view === "Kal
 
 function createPartnerDemoPackages(): PartnerPackage[] { return [{id:"demo-package-civil",partnerId:"demo",serviceType:"photography",name:"Standesamt & Portraits",description:"Begleitung der Trauung, Paarportraits und eine kuratierte Online-Galerie.",resourceKey:"hauptteam",durationMinutes:240,bufferBeforeMinutes:30,bufferAfterMinutes:30,priceAmount:1290,currency:"EUR",includedItems:["4 Stunden Begleitung","Online-Galerie","Vorgespräch"],isPublished:true},{id:"demo-package-story",partnerId:"demo",serviceType:"photography",name:"Hochzeitsreportage",description:"Die Geschichte eures Tages von den Vorbereitungen bis zum ersten Tanz.",resourceKey:"hauptteam",durationMinutes:480,bufferBeforeMinutes:60,bufferAfterMinutes:30,priceAmount:2400,currency:"EUR",includedItems:["8 Stunden Begleitung","Sneak Peeks innerhalb 72 Stunden","Online-Galerie"],isPublished:true},{id:"demo-package-full",partnerId:"demo",serviceType:"photography",name:"Ganzer Hochzeitstag",description:"Für Paare, die ihren gesamten Tag dokumentarisch festhalten möchten.",resourceKey:"hauptteam",durationMinutes:720,bufferBeforeMinutes:60,bufferAfterMinutes:60,priceAmount:3250,currency:"EUR",includedItems:["12 Stunden Begleitung","Zwei Fotograf:innen","Fine-Art-Album"],isPublished:false}]; }
 function createDemoServiceAreas():PartnerServiceArea[]{return[{id:"demo-photo",partnerId:"demo",serviceType:"photography",isActive:true,bookingMode:"standalone",externalAddonsPolicy:"allowed",externalAddonsNote:"Externe Location und Catering sind willkommen."},{id:"demo-location",partnerId:"demo",serviceType:"location",isActive:false,bookingMode:"standalone",externalAddonsPolicy:"allowed",externalAddonsNote:""},{id:"demo-catering",partnerId:"demo",serviceType:"catering",isActive:false,bookingMode:"add_on",externalAddonsPolicy:"restricted",externalAddonsNote:"Nur zu einer Location-Buchung."}]}
+
+const availabilityDayLabels = [
+  { value: 1, label: "Mo" }, { value: 2, label: "Di" }, { value: 3, label: "Mi" }, { value: 4, label: "Do" },
+  { value: 5, label: "Fr" }, { value: 6, label: "Sa" }, { value: 7, label: "So" },
+];
+
+function PartnerAvailabilitySettings({ demoMode, partnerId, packages, rules, blackouts, onRulesChange, onBlackoutsChange }: { demoMode: boolean; partnerId: string; packages: PartnerPackage[]; rules: PartnerAvailabilityRule[]; blackouts: PartnerAvailabilityBlackout[]; onRulesChange: (items: PartnerAvailabilityRule[]) => void; onBlackoutsChange: (items: PartnerAvailabilityBlackout[]) => void }) {
+  const resourceOptions = useMemo(() => ["all", ...Array.from(new Set(packages.map((item) => item.resourceKey).filter((item) => item && item !== "all")))], [packages]);
+  const [resourceKey, setResourceKey] = useState("all");
+  const [draft, setDraft] = useState<Omit<PartnerAvailabilityRule, "id" | "partnerId">>({ resourceKey: "all", allowedWeekdays: [1, 2, 3, 4, 5, 6, 7], dailyStartsAt: "08:00", dailyEndsAt: "22:00", minNoticeHours: 24, maxAdvanceDays: 730, blockGermanPublicHolidays: false });
+  const [blackoutDraft, setBlackoutDraft] = useState({ label: "", startsOn: "", endsOn: "" });
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => { if (!resourceOptions.includes(resourceKey)) setResourceKey("all"); }, [resourceKey, resourceOptions]);
+  useEffect(() => {
+    const existing = rules.find((item) => item.resourceKey === resourceKey);
+    setDraft(existing ? { resourceKey: existing.resourceKey, allowedWeekdays: existing.allowedWeekdays, dailyStartsAt: existing.dailyStartsAt, dailyEndsAt: existing.dailyEndsAt, minNoticeHours: existing.minNoticeHours, maxAdvanceDays: existing.maxAdvanceDays, blockGermanPublicHolidays: existing.blockGermanPublicHolidays } : { resourceKey, allowedWeekdays: [1, 2, 3, 4, 5, 6, 7], dailyStartsAt: "08:00", dailyEndsAt: "22:00", minNoticeHours: 24, maxAdvanceDays: 730, blockGermanPublicHolidays: false });
+  }, [resourceKey, rules]);
+
+  const toggleDay = (day: number) => setDraft((current) => ({ ...current, allowedWeekdays: current.allowedWeekdays.includes(day) ? current.allowedWeekdays.filter((item) => item !== day) : [...current.allowedWeekdays, day].sort((a, b) => a - b) }));
+  const saveRule = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!draft.allowedWeekdays.length || draft.dailyEndsAt <= draft.dailyStartsAt) { setMessage("Wählt mindestens einen Wochentag und ein gültiges Zeitfenster."); return; }
+    setBusy(true); setMessage("");
+    try {
+      if (demoMode) {
+        const saved: PartnerAvailabilityRule = { id: rules.find((item) => item.resourceKey === resourceKey)?.id || `demo-availability-${resourceKey}`, partnerId: "demo", ...draft };
+        onRulesChange([...rules.filter((item) => item.resourceKey !== resourceKey), saved]);
+      } else {
+        const saved = await savePartnerAvailabilityRule(partnerId, draft);
+        onRulesChange([...rules.filter((item) => item.resourceKey !== resourceKey), saved]);
+      }
+      setMessage("Buchungsregeln gespeichert. Freie Kalenderlücken außerhalb davon bleiben für Paare unsichtbar.");
+    } catch { setMessage("Die Buchungsregeln konnten nicht gespeichert werden."); } finally { setBusy(false); }
+  };
+  const addBlackout = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!blackoutDraft.label.trim() || !blackoutDraft.startsOn || !blackoutDraft.endsOn || blackoutDraft.endsOn < blackoutDraft.startsOn) { setMessage("Bitte gebt einen Namen und einen gültigen Zeitraum an."); return; }
+    setBusy(true); setMessage("");
+    try {
+      const input = { resourceKey, label: blackoutDraft.label.trim(), startsOn: blackoutDraft.startsOn, endsOn: blackoutDraft.endsOn };
+      if (demoMode) onBlackoutsChange([...blackouts, { id: `demo-blackout-${Date.now()}`, partnerId: "demo", ...input }]);
+      else onBlackoutsChange([...blackouts, await createPartnerAvailabilityBlackout(partnerId, input)]);
+      setBlackoutDraft({ label: "", startsOn: "", endsOn: "" });
+      setMessage("Sperrzeitraum gespeichert. Er blockiert nur die ausgewählte Leistung.");
+    } catch { setMessage("Der Sperrzeitraum konnte nicht gespeichert werden."); } finally { setBusy(false); }
+  };
+  const removeBlackout = async (item: PartnerAvailabilityBlackout) => {
+    setBusy(true); setMessage("");
+    try { if (!demoMode) await deletePartnerAvailabilityBlackout(item.id); onBlackoutsChange(blackouts.filter((entry) => entry.id !== item.id)); setMessage("Sperrzeitraum entfernt."); } catch { setMessage("Der Sperrzeitraum konnte nicht entfernt werden."); } finally { setBusy(false); }
+  };
+  const visibleBlackouts = blackouts.filter((item) => item.resourceKey === resourceKey);
+  return <section className={styles.availability}>
+    <header><div><small>Direktbuchung · Verfügbarkeit</small><h1>Wann möchtet ihr buchbar sein?</h1><p>Diese Regeln sind eure Grundverfügbarkeit. Ein verbundener Kalender und einzelne Sperrzeiten blockieren zusätzlich – sie können freie Zeiten niemals automatisch freigeben.</p></div><span><b>✓</b> Kalender + Regeln</span></header>
+    <div className={styles.availabilityIntro}><strong>Für nebenberufliche Anbieter</strong><p>Wählt zum Beispiel nur Samstag als buchbar. Montag bis Freitag bleiben dann auch dann unsichtbar, wenn euer privater Kalender leer ist.</p></div>
+    <label className={styles.resourcePicker}>Gilt für<select value={resourceKey} onChange={(event) => setResourceKey(event.target.value)}><option value="all">Alle Leistungen und Teams</option>{resourceOptions.filter((item) => item !== "all").map((item) => <option key={item} value={item}>Leistung / Team: {item}</option>)}</select></label>
+    <form className={styles.availabilityForm} onSubmit={saveRule}>
+      <div className={styles.availabilityDays}><strong>Buchbare Wochentage</strong><div>{availabilityDayLabels.map((day) => <button aria-pressed={draft.allowedWeekdays.includes(day.value)} key={day.value} onClick={() => toggleDay(day.value)} type="button">{day.label}</button>)}</div><small>Nur an diesen Tagen kann Ouivio ein Paket als verfügbar zeigen.</small></div>
+      <label>Von<input type="time" value={draft.dailyStartsAt} onChange={(event) => setDraft((current) => ({ ...current, dailyStartsAt: event.target.value }))}/></label>
+      <label>Bis<input type="time" value={draft.dailyEndsAt} onChange={(event) => setDraft((current) => ({ ...current, dailyEndsAt: event.target.value }))}/></label>
+      <label>Vorlaufzeit<select value={draft.minNoticeHours} onChange={(event) => setDraft((current) => ({ ...current, minNoticeHours: Number(event.target.value) }))}><option value={0}>Keine Mindestvorlaufzeit</option><option value={24}>Mindestens 24 Stunden</option><option value={48}>Mindestens 48 Stunden</option><option value={168}>Mindestens 7 Tage</option><option value={336}>Mindestens 14 Tage</option></select></label>
+      <label>Im Voraus buchbar<select value={draft.maxAdvanceDays} onChange={(event) => setDraft((current) => ({ ...current, maxAdvanceDays: Number(event.target.value) }))}><option value={180}>Bis 6 Monate</option><option value={365}>Bis 12 Monate</option><option value={730}>Bis 24 Monate</option><option value={1095}>Bis 36 Monate</option></select></label>
+      <label className={styles.holidayToggle}><input checked={draft.blockGermanPublicHolidays} type="checkbox" onChange={(event) => setDraft((current) => ({ ...current, blockGermanPublicHolidays: event.target.checked }))}/><span><strong>Bundesweite Feiertage ausschließen</strong><small>Neujahr, Karfreitag, Ostermontag, 1. Mai, Christi Himmelfahrt, Pfingstmontag, 3. Oktober sowie 25./26. Dezember.</small></span></label>
+      <button disabled={busy} type="submit">{busy ? "Wird gespeichert …" : "Buchungsregeln speichern"}</button>
+    </form>
+    <section className={styles.blackouts}><div><small>Ausnahmen</small><h2>Urlaub, Ferien & private Zeit</h2><p>Hinterlegt eigene Zeiträume für Schulferien, Betriebsurlaub, regionale Feiertage oder freie Wochenenden. Diese Daten bleiben privat.</p></div><form onSubmit={addBlackout}><label>Bezeichnung<input maxLength={120} placeholder="z. B. Sommerurlaub" value={blackoutDraft.label} onChange={(event) => setBlackoutDraft((current) => ({ ...current, label: event.target.value }))}/></label><label>Von<input type="date" value={blackoutDraft.startsOn} onChange={(event) => setBlackoutDraft((current) => ({ ...current, startsOn: event.target.value }))}/></label><label>Bis<input type="date" value={blackoutDraft.endsOn} onChange={(event) => setBlackoutDraft((current) => ({ ...current, endsOn: event.target.value }))}/></label><button disabled={busy} type="submit">Zeitraum sperren</button></form>{visibleBlackouts.length ? <ul>{visibleBlackouts.map((item) => <li key={item.id}><span><strong>{item.label}</strong><small>{new Date(`${item.startsOn}T12:00`).toLocaleDateString("de-DE")} – {new Date(`${item.endsOn}T12:00`).toLocaleDateString("de-DE")}</small></span><button disabled={busy} type="button" onClick={() => void removeBlackout(item)}>Entfernen</button></li>)}</ul> : <p className={styles.emptyBlackouts}>Noch keine individuellen Sperrzeiträume. Kalendertermine bleiben davon unabhängig aktiv.</p>}</section>
+    {message && <p className={styles.availabilityMessage} role="status">{message}</p>}
+  </section>;
+}
 function ServiceAreaSettings({demoMode,items,partnerId,onChange}:{demoMode:boolean;items:PartnerServiceArea[];partnerId:string;onChange:(items:PartnerServiceArea[])=>void}){
   const all=(['location','catering','photography'] as const).map(type=>items.find(item=>item.serviceType===type)||{id:type,partnerId,serviceType:type,isActive:false,bookingMode:'standalone' as const,externalAddonsPolicy:'allowed' as const,externalAddonsNote:''});
   const save=async(area:PartnerServiceArea)=>{
