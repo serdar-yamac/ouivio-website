@@ -1,5 +1,5 @@
-import { createDecipheriv } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { decryptCalendarCredentials } from "@/lib/calendar-credentials";
 
 const appleRoot = "https://caldav.icloud.com/";
 const davContentType = "application/xml; charset=utf-8";
@@ -22,7 +22,7 @@ export async function syncAppleCalendar({
   encryptionKey: string;
   job: AppleCalendarSyncJob;
 }) {
-  const credentials = decrypt(job.encryptedCredentials, encryptionKey);
+  const credentials = decryptCalendarCredentials<Credentials>(job.encryptedCredentials, encryptionKey);
   const authorization = `Basic ${Buffer.from(`${credentials.appleId}:${credentials.appPassword}`, "utf8").toString("base64")}`;
   const { calendars, events } = await readAppleEvents(authorization);
 
@@ -55,16 +55,6 @@ export async function syncAppleCalendar({
   if (connectionError) throw connectionError;
 
   return { calendars, imported: events.length };
-}
-
-function decrypt(value: string, rawKey: string): Credentials {
-  const [, iv, ciphertext, tag] = value.split(".");
-  if (!iv || !ciphertext || !tag) throw new Error("Die gespeicherte Kalenderverbindung ist ungültig.");
-  const key = Buffer.from(rawKey, "base64");
-  if (key.length !== 32) throw new Error("Die sichere Kalenderverbindung ist nicht korrekt eingerichtet.");
-  const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "base64url"));
-  decipher.setAuthTag(Buffer.from(tag, "base64url"));
-  return JSON.parse(Buffer.concat([decipher.update(Buffer.from(ciphertext, "base64url")), decipher.final()]).toString("utf8")) as Credentials;
 }
 
 async function readAppleEvents(authorization: string): Promise<{ calendars: number; events: ImportedEvent[] }> {
