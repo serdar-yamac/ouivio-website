@@ -170,7 +170,10 @@ function dateField(event: string, name: "DTSTART" | "DTEND") {
 }
 function decodeIcsText(value: string) { return value.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1"); }
 function parseIcsDate(value: string, timezone?: string) {
-  if (/^\d{8}$/.test(value)) return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T00:00:00Z`;
+  // DATE values represent all-day entries. Apple ends those events on the
+  // following date, so converting both boundaries in their own timezone
+  // correctly blocks the complete local day, including daylight-saving days.
+  if (/^\d{8}$/.test(value)) return localTimeToUtc(`${value}T000000`, timezone || "Europe/Berlin");
   const compact = value.replace(/Z$/, "");
   if (!/^\d{8}T\d{6}$/.test(compact)) return null;
   if (value.endsWith("Z")) return `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}T${compact.slice(9, 11)}:${compact.slice(11, 13)}:${compact.slice(13, 15)}Z`;
