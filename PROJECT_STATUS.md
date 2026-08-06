@@ -1,9 +1,6 @@
-Warning: truncated output (original token count: 21238)
-Total output lines: 390
-
 # Ouivio – Projektstatus
 
-Stand: 4. August 2026
+Stand: 5. August 2026
 
 Branch: `feat/ouivio-core-foundation`
 
@@ -252,7 +249,37 @@ Priorität 3 – Qualität und Betrieb:
 - TypeScript-Prüfung und optimierter Next.js-Production-Build nach Einführung der Supabase-Grundlage und Aufgabenverwaltung erfolgreich.
 - Browserprüfung erfolgreich: Dashboard lädt ohne Fehler-Overlay oder Konsolenfehler; Aufgabe konnte angelegt und wieder gelöscht werden.
 - Supabase-Migration im eigenständigen EU-Projekt erfolgreich ausgeführt und geprüft: 8 Tabellen, 8 Tabellen mit RLS und 11 Richtlinien.
-- Berechtigungsprüfung …1238 tokens truncated…erfolgreich: Profil zeigt Location, Fotografie und Catering getrennt; der Fotografie-Leistungsbereich zeigt das geschützte Portfolioformular mit Dateiauswahl, Titel und Bildstil ohne Fehleroverlay.
+- Berechtigungsprüfung erfolgreich: `authenticated` darf die interne Mitgliedschaftsfunktion ausführen, `anon` nicht.
+- Supabase Security Advisor geprüft: 0 Fehler, 0 Warnungen und 0 Hinweise.
+- Lokale Verbindung geprüft: Supabase Auth-Einstellungen antworten mit HTTP 200; anonyme Anbieterabfrage liefert wegen RLS keine Datensätze.
+- Vercel-Konfiguration geprüft: `NEXT_PUBLIC_SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_ANON_KEY` sind ausschließlich für Preview und den Branch `feat/ouivio-core-foundation` hinterlegt; Production blieb unverändert.
+- Supabase Auth Site URL auf den stabilen Feature-Branch-Preview gesetzt; E-Mail-/Passwort-Authentifizierung ist für das Projekt aktiv.
+- Auth-Ablauf lokal geprüft: `/dashboard` leitet ohne Sitzung nach `/login`, ein ungültiger Login wird abgewiesen und verständlich angezeigt.
+- TypeScript-Prüfung und optimierter Production-Build nach Einführung von Supabase Auth erfolgreich.
+- Optimierter Next.js-Production-Build nach Umstellung der Aufgabenverwaltung auf Supabase erfolgreich.
+- Integrität der geschützten Startseiten erneut per SHA-256 bestätigt; beide Dateien entsprechen unverändert dem festgelegten Hash.
+- TypeScript-Prüfung nach Einführung der editierbaren Supabase-Budgetverwaltung erfolgreich.
+- Optimierter Next.js-Production-Build und lokale Browserprüfung nach der Budgetanbindung erfolgreich; der geschützte Dashboard-Aufruf leitet ohne Sitzung fehlerfrei zur Anmeldung.
+- Migration `20260801114314_guest_rsvp_links.sql` im Supabase-Projekt ausgeführt: Token-Spalte, eindeutiger Index, Antwortzeitpunkt und zwei RSVP-RPCs sind aktiv.
+- Sicherheitsprüfung bestätigt: `anon` kann `guests` weder lesen noch ändern, darf nur die zwei vorgesehenen RPCs ausführen; ungültige Tokens liefern 0 Datensätze.
+- Öffentlicher Data-API-Test bestätigt: Einladungs-RPC antwortet auf einen ungültigen Token mit HTTP 200 und leerem Ergebnis, direkter anonymer Gästezugriff wird mit HTTP 401 abgewiesen.
+- Supabase Security Advisor nach der RSVP-Migration: 0 Fehler, 5 Warnungen. Vier Warnungen dokumentieren die bewusst öffentlich ausführbaren, tokenbegrenzten `SECURITY DEFINER`-RPCs; eine bestehende Warnung betrifft deaktivierten Schutz vor geleakten Passwörtern.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build einschließlich dynamischer Route `/invite/[token]` erfolgreich.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach Ergänzung des vorbereiteten E-Mail-Versands erfolgreich.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach Erweiterung um WhatsApp-, Instagram- und E-Mail-Teilen erfolgreich.
+- TypeScript-Prüfung und optimierter Next.js-Production-Build nach der Hochformat-Optimierung der öffentlichen Startseite erfolgreich; `public/index.html` und `index.html` sind weiterhin bytegleich.
+- Mobile Dashboard-Styles für 320–430 Pixel breite Smartphones geprüft und überarbeitet; Navigation, Kopfbereich, Karten, Gästedaten und Sharing-Aktionen passen sich ohne horizontales Überlaufen an.
+- Lokale Browserprüfung der öffentlichen Einladungsroute erfolgreich: ungültiger Token zeigt den sicheren Nicht-gefunden-Zustand ohne Fehler-Overlay oder Konsolenfehler.
+- Transaktionaler RSVP-Ende-zu-Ende-Test erfolgreich: Testgast angelegt, Einladung als `anon` gelesen, Zusage als `anon` gespeichert, Antwortzeitpunkt geprüft und sämtliche Testdaten per `ROLLBACK` verworfen.
+- Abhängigkeitsprüfung ausgeführt: keine kritischen Hinweise; drei hohe transitive Hinweise der bestehenden Next.js-15-Lieferkette sind dokumentiert und nicht automatisch mit einem riskanten Major-Wechsel behoben worden.
+- Partner-Kalendergrundlage in Supabase angewendet und geprüft: vier neue öffentliche Tabellen mit aktiver RLS sowie ein privater, für Browserrollen gesperrter Secret-Speicher.
+- TypeScript-Prüfung und optimierter Production-Build einschließlich der neuen Route `/partner` erfolgreich.
+- TypeScript-Prüfung und optimierter Production-Build nach Ergänzung von Terminbearbeitung, Status-/Notizpflege, Sperrzeit-Schnellaktion und Überschneidungswarnung erfolgreich; geschützte Startseitenkopien weiterhin bytegleich.
+- Partner-Demomodus ohne Anmeldung ergänzt; TypeScript-Prüfung und optimierter Production-Build erfolgreich, geschützte Startseitenkopien weiterhin bytegleich.
+- Lokale Browserprüfung unter `/partner?demo=1` erfolgreich: Partner-Dashboard, Monatskalender, Beispieldaten und Demo-Hinweis laden ohne Anmeldung und ohne Next.js-Fehleroverlay.
+- Migration für Anbieterkategorien und Fotografen-Portfolios im Supabase-Projekt ausgeführt und geprüft: private Storage-Ablage, eine RLS-geschützte Metadatentabelle sowie vier eigentümergebundene Storage-Richtlinien sind aktiv.
+- TypeScript-Prüfung und optimierter Production-Build nach Einführung der Anbieter-Spezialisierung und Portfolioverwaltung erfolgreich; geschützte Startseitenkopien weiterhin bytegleich.
+- Lokale Browserprüfung erfolgreich: Profil zeigt Location, Fotografie und Catering getrennt; der Fotografie-Leistungsbereich zeigt das geschützte Portfolioformular mit Dateiauswahl, Titel und Bildstil ohne Fehleroverlay.
 - Eine parallele Kundendemo unter `/discover?demo=1` zeigt Anbieterprofile aus Kundensicht. Erste vollständig fiktive Profile für Location und Catering enthalten eigens erzeugte Demo-Fotos, Leistungsmerkmale, Preise und Beispielgerichte; aus der Partner-Demo kann direkt zur Kundensicht gewechselt werden.
 - Die Kundendemo enthält zusätzlich das fiktive Profil „Luma Fotografie“ mit eigens erzeugter Portfolioaufnahme, dokumentarischem Bildstil, drei Paketen, Preisrahmen, Begleitdauer und Lieferzeit.
 - Das fiktive Profil „Luma Fotografie“ besitzt unter `/discover/luma?demo=1` eine ausführliche, wiederverwendbare Fotografenprofil-Vorlage: mehrteilige Portfolio-Reportage, Stilmerkmale, Persönlichkeit, Erfahrung, Pakete, Lieferzeiten, Bewertung, Merken-Aktion, Hochzeitstermin und einen klar als Demo gekennzeichneten direkten Buchungseinstieg.
@@ -359,5 +386,8 @@ Priorität 3 – Qualität und Betrieb:
 - Google Calendar ist nun zentral für den Feature-Preview `feat/ouivio-core-foundation` konfiguriert: Die vorhandene Google-OAuth-Webanwendung verwendet die exakte Ouivio-Callback-Adresse und ihre Client-ID sowie ein neu erzeugtes Client-Secret liegen ausschließlich als sensible, branchgebundene Vercel-Preview-Variablen vor. Weder Geheimnisse noch Zugangsdaten wurden in Code, Git oder diese Dokumentation geschrieben. Ein frisches Feature-Preview-Deployment (`ouivio-website-7myvewn3j-ouivio.vercel.app`) ist erfolgreich bereitgestellt; die Production-Domains und `main` blieben unverändert. Als nächster Google-Schritt bleibt nur der echte Partner-Freigabetest im Dashboard; Microsoft Entra ist weiterhin separat einzurichten.
 - Google-OAuth-Freigabetest am 5. August: Der Zustimmungsbildschirm ist weiterhin im Google-Testmodus. Der Versuch, das im Fehlerdialog sichtbare Google-Konto als Testnutzer einzutragen, wurde von Google selbst mit „Nicht berechtigte Konten nicht hinzugefügt“ abgewiesen. Der OAuth-Client, die Callback-Adresse und die Vercel-Preview-Geheimnisse sind davon nicht betroffen. Bis zur Klärung kann dieses Konto keine Google-Freigabe abschließen; die nächste mögliche externe Maßnahme wäre entweder ein anderes berechtigtes Google-Konto als Testnutzer oder die bewusste Veröffentlichung des OAuth-Zustimmungsbildschirms. Letzteres würde den Zugang für externe Konten grundsätzlich öffnen und erfordert vorab eine ausdrückliche Freigabe sowie später Googles Verifizierungsprozess für die verwendete Calendar-Read-only-Berechtigung.
 - Google-OAuth-Zustimmungsbildschirm am 5. August mit ausdrücklicher Benutzerfreigabe von „Test“ nach „In Produktion“ veröffentlicht. Der Status in Google Cloud bestätigt die Veröffentlichung; externe Google-Konten können damit die Ouivio-Calendar-Read-only-Freigabe grundsätzlich starten. Die Anwendung ist noch nicht von Google verifiziert und unterliegt deshalb der unverified-user-Grenze von 100 Nutzern sowie der später erforderlichen Marken-/Scope-Verifizierung. `main`, die Production-Domains, Startseite und sämtliche Ouivio-Produktionsdaten wurden dabei nicht geändert.
-- Outlook/Microsoft 365 ist nun für den Feature-Preview `feat/ouivio-core-foundation` vorbereitet: Die vorhandene Entra-App erlaubt Entra-ID- und persönliche Microsoft-Konten, besitzt beide Web-Callback-Adressen der aktiven Feature-Preview-Aliasse und die erforderliche delegierte Microsoft-Graph-Leseberechtigung. Client-ID und ein neu erzeugtes Secret liegen ausschließlich als sensible, branchgebundene Vercel-Preview-Variablen vor. Ein frisches Preview-Deployment (`ouivio-website-84vs70mh3-ouivio.vercel.app`) ist erfolgreich bereitgestellt; `main` und Production wurden nicht verändert. Der noch ausstehende Test ist bewusst nur die einmalige Partner-Freigabe im angemeldeten Dashboard; dabei werden weder Microsoft-Passwörter noch Kalenderinhalte in Ouivio offengelegt.
-- Die Google- und Outlook/Microsoft-Karten zeigen Partnern jetzt ausschließlich den einfachen, sicheren Freigabeablauf: direkt beim jeweiligen Anbieter anmelden, nur belegte Zeiten lesend freigeben, jederzeit im eigenen Konto widerrufen. Interne Ouivio-Administration wie OAuth-Clients, Callback-Adressen, Cloud-/Entra-Konsole und Vercel-Geheimnisse sind bewusst vollständig aus dem Partner-Dashboard entfernt. Die eigentliche OAuth-Verbindung bleibt unverändert.
+
+- Der zuvor von Google als `deleted_client` abgelehnte OAuth-Webclient wurde am 5. August ersetzt. Die neue Google Client-ID und das neue Client-Secret liegen ausschließlich als sensible Vercel-Preview-Variablen auf `feat/ouivio-core-foundation`; weder `main` noch Production wurden geändert. Die Preview wurde daraufhin erfolgreich neu gebaut: `https://ouivio-website-1k4tkn7uc-ouivio.vercel.app` (`READY`). Der Partner-Freigabetest wurde bis zur Google-Kontoauswahl erfolgreich durchgeführt: Der feste Feature-Link öffnet den neuen Google-Anmeldedialog mit dem Ersatzclient, nicht mehr den früheren Fehler `deleted_client`. Die abschließende Zustimmung zu Kalenderrechten wird bewusst erst durch den Partner selbst erteilt.
+
+
+- Partnerführung Kalender: Die Google- und Outlook/Microsoft-Karten erklären ausschließlich den sicheren Freigabeablauf aus Sicht eines Partners. Interne Schritte wie OAuth-Client, Cloud-/Entra-Konsole, Callback-Adresse und Vercel-Geheimnisse werden nicht mehr im Partner-Dashboard angezeigt.
