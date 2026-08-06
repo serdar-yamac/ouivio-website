@@ -391,3 +391,5 @@ Priorität 3 – Qualität und Betrieb:
 
 
 - Partnerführung Kalender: Die Google- und Outlook/Microsoft-Karten erklären ausschließlich den sicheren Freigabeablauf aus Sicht eines Partners. Interne Schritte wie OAuth-Client, Cloud-/Entra-Konsole, Callback-Adresse und Vercel-Geheimnisse werden nicht mehr im Partner-Dashboard angezeigt.
+
+- Vercel hat den Feature-Preview am 6. August wegen des bisherigen Fünf-Minuten-Cron-Ausdrucks abgelehnt (`cron_jobs_limits_reached`): Der Hobby-Tarif erlaubt nur täglich laufende Cron-Jobs. Der Entwicklungs-Cron ist deshalb vorübergehend auf täglich 03:00 UTC gesetzt, damit Preview-Builds wieder zuverlässig bereitgestellt werden. Eine Synchronisation alle fünf Minuten bei geschlossenem Dashboard erfordert vor dem Launch den Vercel-Pro-Tarif oder einen bewusst ausgewählten externen Scheduler; sie wird bis dahin nicht als aktiv ausgegeben.
