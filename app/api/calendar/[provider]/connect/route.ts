@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { authorizationUrl, isOAuthCalendarProvider, oauthState, oauthStateHash } from "@/lib/oauth-calendar";
+import { oauthCallbackUrl } from "@/lib/oauth-callback-origin";
 
 export const runtime = "nodejs";
 
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { error } = await supabase.rpc("create_calendar_oauth_state", { p_provider: rawProvider, p_state_hash: oauthStateHash(state) });
   if (error) return NextResponse.json({ message: "Die sichere Kalenderfreigabe konnte nicht vorbereitet werden." }, { status: 403 });
   try {
-    const redirectUri = new URL(`/api/calendar/${rawProvider}/callback`, request.nextUrl.origin).toString();
+    const redirectUri = oauthCallbackUrl(rawProvider, request.nextUrl.origin);
     return NextResponse.json({ url: authorizationUrl(rawProvider, redirectUri, state) });
   } catch (error) { return NextResponse.json({ message: error instanceof Error ? error.message : "Kalenderanbieter ist noch nicht eingerichtet." }, { status: 503 }); }
 }
