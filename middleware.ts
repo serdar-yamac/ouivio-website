@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 21650)
-Total output lines: 416
-
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
