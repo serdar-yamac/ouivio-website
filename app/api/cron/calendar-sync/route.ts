@@ -11,8 +11,11 @@ type SyncRow = { connection_id: string; partner_id: string; provider: "apple" | 
 
 export async function GET(request: NextRequest) {
   if (request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) return new NextResponse("Unauthorized", { status: 401 });
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.OUIVIO_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.OUIVIO_SUPABASE_SERVER_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
   const encryptionKey = calendarEncryptionKey();
   if (!url || !serviceRoleKey || !encryptionKey) return NextResponse.json({ ok: false, message: "Cron ist noch nicht vollständig konfiguriert." }, { status: 503 });
   const supabase = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });

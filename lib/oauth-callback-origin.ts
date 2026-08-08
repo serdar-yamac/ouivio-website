@@ -1,5 +1,7 @@
 const featurePreviewBranch = "feat/ouivio-core-foundation";
-const featurePreviewOrigin = "https://ouivio-website-git-feat-ouivio-core-foundation-ouivio.vercel.app";
+// This is Vercel's persistent branch link. Manual preview redeploys inherit it,
+// while the older `git-feat-...` alias can stay pinned to an obsolete build.
+const featurePreviewOrigin = "https://ouivio-website-serdar-yamac-ouivio.vercel.app";
 
 function normalizeOrigin(value: string) {
   const url = new URL(value);

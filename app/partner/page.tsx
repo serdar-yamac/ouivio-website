@@ -196,6 +196,34 @@ function CalendarConnections({ onSynced }: { onSynced: () => Promise<void> }) {
   const lastAutomaticSync = useRef(0);
 
   useEffect(() => {
+    const parameters = new URLSearchParams(window.location.search);
+    const status = parameters.get("calendar");
+    const reason = parameters.get("calendarReason");
+    if (status?.startsWith("google-")) setOpenProvider("google");
+    if (status?.startsWith("microsoft-")) setOpenProvider("microsoft");
+    if (status === "google-connected") setNotice("Google Calendar ist verbunden. Eure belegten Zeiten werden jetzt importiert.");
+    if (status === "microsoft-connected") setNotice("Outlook / Microsoft 365 ist verbunden. Eure belegten Zeiten werden jetzt importiert.");
+    if (status?.endsWith("-error")) {
+      const message = reason === "redirect"
+        ? "Die Rücksprungadresse bei Microsoft stimmt noch nicht mit Ouivio überein. Wir korrigieren die Plattform-Einrichtung – ihr müsst keine Daten erneut eingeben."
+        : reason === "authorization"
+          ? "Die Freigabe wurde beim Kalenderanbieter abgebrochen oder nicht erteilt. Euer Kalender wurde nicht verändert – startet die Verbindung erneut, wenn ihr fortfahren möchtet."
+          : reason === "client"
+            ? "Der Kalenderanbieter konnte die sichere Ouivio-Verbindung noch nicht bestätigen. Die Plattform-Einrichtung wird geprüft; euer Kalender wurde nicht verändert."
+            : reason === "configuration"
+              ? "Die sichere Kalenderverbindung wird für diese Umgebung gerade noch eingerichtet. Euer Kalender wurde nicht verändert."
+            : reason === "expired"
+              ? "Die Freigabe ist abgelaufen, bevor sie gespeichert werden konnte. Startet die Verbindung bitte noch einmal und bestätigt sie innerhalb weniger Minuten."
+              : reason === "state"
+                ? "Diese Freigabe konnte nicht mehr eurem Partnerkonto zugeordnet werden. Startet die Verbindung bitte noch einmal in diesem Browser."
+                : reason === "encryption"
+                  ? "Die sichere Speicherung der Kalenderverbindung ist noch nicht vollständig eingerichtet. Euer Kalender wurde nicht verändert."
+                  : reason === "save"
+                    ? "Die Freigabe war erfolgreich, konnte aber noch nicht in eurem Partnerkonto gespeichert werden. Wir prüfen die Verbindung – euer Kalender wurde nicht verändert."
+                    : "Die Kalenderfreigabe wurde nicht gespeichert. Euer Kalender wurde nicht verändert. Bitte versucht es erneut oder prüft die angezeigte Anbieter-Meldung.";
+      setNotice(message);
+    }
+
     let active = true;
     void (async () => {
       const { data: sessionData } = await getSupabaseClient().auth.getSession();
@@ -213,10 +241,6 @@ function CalendarConnections({ onSynced }: { onSynced: () => Promise<void> }) {
             });
           }
         }
-        const status = new URLSearchParams(window.location.search).get("calendar");
-        if (status === "google-connected") setNotice("Google Calendar ist verbunden. Eure belegten Zeiten werden jetzt importiert.");
-        if (status === "microsoft-connected") setNotice("Outlook / Microsoft 365 ist verbunden. Eure belegten Zeiten werden jetzt importiert.");
-        if (status?.endsWith("-error")) setNotice("Die Kalenderfreigabe wurde nicht abgeschlossen. Bitte versucht es erneut.");
       }
     })();
     return () => { active = false; };
@@ -279,10 +303,11 @@ function CalendarConnections({ onSynced }: { onSynced: () => Promise<void> }) {
     { provider: "microsoft" as const, name: "Outlook / Microsoft 365", detail: "Microsoft OAuth · nur belegte Zeiten", connected: microsoftConnected, accountName: "Microsoft-Konto" },
   ];
   return <article className={styles.connections}><div><small>Schnittstellen</small><h2>Kalender verbinden</h2><p>Importiert auf Wunsch belegte Zeiten aus einem verbundenen Kalender. Ouivio schreibt niemals Termine zurück.</p></div>
+    {notice && <p className={styles.notice} role={notice.includes("verbunden") ? "status" : "alert"}>{notice}</p>}
     <button type="button" className={styles.appleConnection} onClick={() => setAppleOpen((current) => !current)} aria-expanded={appleOpen}><b aria-hidden="true"><AppleCalendarLogo/></b><span><strong>Apple Calendar</strong><small>{appleConnected ? "iCloud Calendar · verbunden" : "iCloud Calendar · CalDAV"}</small></span><i>{appleOpen ? "Schließen" : appleConnected ? "✓ Verbunden" : "Zugang prüfen →"}</i></button>
     {appleOpen && <form className={styles.appleForm} onSubmit={testAppleConnection}><header><span>{appleConnected ? "✓" : "1"}</span><div><strong>{appleConnected ? "Apple Calendar ist verbunden" : "Apple Calendar verbinden"}</strong><p>{appleConnected ? "Ouivio gleicht belegte Zeiten beim Öffnen, beim Zurückkehren in diesen Tab und anschließend alle fünf Minuten automatisch ab." : "Für iCloud Calendar benötigt Ouivio ein separates Apple-App-Passwort – niemals euer normales Apple-ID-Passwort."}</p></div></header>{appleConnected ? <><button disabled={syncing} onClick={() => void syncAppleCalendar()} type="button">{syncing ? "Apple Calendar wird synchronisiert …" : "Jetzt aktualisieren"}</button><small>Importiert werden die belegten Zeiten der kommenden 24 Monate inklusive Titel, ausschließlich in euren privaten Partnerkalender. Ouivio schreibt keine Termine zurück.</small></> : <><ol><li>Öffnet eure Apple-Account-Verwaltung.</li><li>Erstellt unter <b>„Anmelden & Sicherheit“</b> ein <b>App-spezifisches Passwort</b>.</li><li>Gebt ihm den Namen <b>„Ouivio Kalender“</b> und kopiert das erzeugte Passwort hierher.</li></ol><a className={styles.appleHelpLink} href="https://account.apple.com" target="_blank" rel="noreferrer">Apple-App-Passwort erstellen <span aria-hidden="true">↗</span></a><aside><b>Wichtig</b><span>Das App-Passwort wird verschlüsselt gespeichert, damit Ouivio belegte Zeiten importieren kann. Ouivio schreibt niemals Termine in euren Apple-Kalender; ihr könnt den Zugang jederzeit bei Apple widerrufen.</span></aside><div className={styles.appleFields}><label>Apple-ID<input aria-invalid={Boolean(appleError)} autoComplete="username" type="email" value={appleId} onChange={(event) => setAppleId(event.target.value)} placeholder="name@icloud.com" required /></label><label>App-spezifisches Passwort<span className={styles.passwordField}><input aria-invalid={Boolean(appleError)} autoComplete="off" type={showApplePassword ? "text" : "password"} value={appPassword} onChange={(event) => setAppPassword(event.target.value)} placeholder="xxxx-xxxx-xxxx-xxxx" required /><button aria-label={showApplePassword ? "Passwort verbergen" : "Passwort anzeigen"} onClick={() => setShowApplePassword((current) => !current)} type="button">{showApplePassword ? "Verbergen" : "Anzeigen"}</button></span></label></div><button disabled={testing}>{testing ? "Apple Calendar wird verbunden …" : "Apple Calendar verbinden"}</button><small>Der Zugang wird verschlüsselt gespeichert und ausschließlich zum Import belegter Zeiten verwendet.</small></>}{appleError && <div className={styles.appleError} role="alert"><strong>Apple Calendar konnte nicht verbunden werden</strong><span>{appleError}</span><small>Prüft Apple-ID und App-spezifisches Passwort. Erstellt bei Bedarf in eurem Apple-Account ein neues Passwort für „Ouivio Kalender“.</small></div>}</form>}
     {providers.map((provider) => { const isOpen = openProvider === provider.provider; return <div className={styles.oauthProvider} key={provider.name}><button type="button" className={isOpen ? styles.oauthConnectionOpen : styles.oauthConnection} onClick={() => setOpenProvider((current) => current === provider.provider ? null : provider.provider)} aria-expanded={isOpen}><b aria-hidden="true"><CalendarProviderLogo provider={provider.provider}/></b><span><strong>{provider.name}</strong><small>{provider.connected ? `${provider.detail.split(" · ")[0]} · verbunden` : provider.detail}</small></span><i>{isOpen ? "Schließen" : provider.connected ? "✓ Verbunden" : "Verbinden →"}</i></button>{isOpen && <section className={styles.oauthForm}><header><span>{provider.connected ? "✓" : "1"}</span><div><strong>{provider.connected ? `${provider.name} ist verbunden` : `${provider.name} verbinden`}</strong><p>{provider.connected ? "Die Verbindung ist aktiv. Ouivio importiert nur belegte Zeiten und schreibt keine Termine in euren externen Kalender." : `Meldet euch im nächsten Schritt sicher bei eurem ${provider.accountName} an und gebt Ouivio einmalig Leserechte für eure belegten Kalenderzeiten.`}</p></div></header>{provider.connected ? <aside><b>Aktiv</b><span>Der Hintergrundabgleich übernimmt künftig nur belegte Zeiten. Ihr könnt die Verbindung jederzeit in euren Kontoeinstellungen widerrufen.</span></aside> : <><div className={styles.oauthBenefits}><article><b>1</b><span><strong>Sicher anmelden</strong><small>Die Freigabe erfolgt direkt bei {provider.provider === "google" ? "Google" : "Microsoft"}.</small></span></article><article><b>2</b><span><strong>Nur belegte Zeiten</strong><small>Ouivio sieht ausschließlich Zeiten, die nicht verfügbar sind.</small></span></article><article><b>3</b><span><strong>Jederzeit trennbar</strong><small>Ihr behaltet die Kontrolle in eurem eigenen Konto.</small></span></article></div><aside><b>Datenschutz</b><span>Ouivio ändert keine Termine in eurem Kalender und fragt niemals euer {provider.accountName}-Passwort ab.</span></aside><button disabled={connectingProvider === provider.provider} onClick={() => void connectProvider(provider.provider)} type="button">{connectingProvider === provider.provider ? "Freigabe wird geöffnet …" : `Weiter mit ${provider.provider === "google" ? "Google" : "Microsoft"}`}</button><small>Danach kehrt ihr automatisch zu Ouivio zurück. Die Verbindung könnt ihr später jederzeit widerrufen.</small></>}</section>}</div>; })}
-    {notice && <p className={styles.notice} role="status">{notice}</p>}<div className={styles.security}>🔒 Zugangsdaten werden verschlüsselt gespeichert und nur für den Import belegter Zeiten verwendet.</div></article>;
+    <div className={styles.security}>🔒 Zugangsdaten werden verschlüsselt gespeichert und nur für den Import belegter Zeiten verwendet.</div></article>;
 }
 function CalendarProviderLogo({ provider }: { provider: "google" | "microsoft" }) {
   if (provider === "microsoft") return <span className={styles.microsoftLogo}><i/><i/><i/><i/></span>;
