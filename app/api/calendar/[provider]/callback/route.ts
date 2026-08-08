@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { encryptCalendarCredentials } from "@/lib/calendar-credentials";
 import { exchangeOAuthCode, isOAuthCalendarProvider, oauthStateHash, providerLabel } from "@/lib/oauth-calendar";
+import { oauthCallbackUrl } from "@/lib/oauth-callback-origin";
 
 export const runtime = "nodejs";
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const saved = Array.isArray(stateRows) ? stateRows[0] : undefined;
   if (stateError || !saved || saved.provider !== rawProvider) { target.searchParams.set("calendar", `${rawProvider}-error`); return NextResponse.redirect(target); }
   try {
-    const redirectUri = new URL(`/api/calendar/${rawProvider}/callback`, request.nextUrl.origin).toString();
+    const redirectUri = oauthCallbackUrl(rawProvider, request.nextUrl.origin);
     const credentials = await exchangeOAuthCode(rawProvider, code, redirectUri);
     const { error } = await supabase.rpc("save_oauth_calendar_connection", { p_partner_id: saved.partner_id, p_provider: rawProvider, p_encrypted_credentials: encryptCalendarCredentials(credentials), p_account_label: credentials.accountLabel });
     if (error) throw error;
